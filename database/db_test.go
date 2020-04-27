@@ -136,7 +136,7 @@ func TestGetUserId(t *testing.T) {
 	assert.Equal(chatId2, db.GetUserChatId(id3))
 }
 
-func TestUsersLanguage(t *testing.T) {
+func TestUserLanguage(t *testing.T) {
 	assert := require.New(t)
 	db := createDbAndConnect(t)
 	defer clearDb()
@@ -164,5 +164,63 @@ func TestUsersLanguage(t *testing.T) {
 		lang2 := db.GetUserLanguage(userId2)
 		assert.Equal("en-US", lang1)
 		assert.Equal("", lang2)
+	}
+}
+
+func TestUserSession(t *testing.T) {
+	assert := require.New(t)
+	db := createDbAndConnect(t)
+	defer clearDb()
+	if db == nil {
+		t.Fail()
+		return
+	}
+	defer db.Disconnect()
+
+	userId1 := db.GetUserId(123, "")
+	userId2 := db.GetUserId(321, "")
+
+	db.CreateSession(userId1)
+
+	{
+		sessionId1, isInSession1 := db.GetUserSession(userId1)
+		_, isInSession2 := db.GetUserSession(userId2)
+		assert.True(isInSession1)
+		assert.False(isInSession2)
+		assert.Equal(int64(1), db.GetUsersCountInSession(sessionId1))
+	}
+
+	sessionId, _ := db.GetUserSession(userId1)
+	db.ConnectToSession(userId2, sessionId)
+
+	{
+		sessionId1, isInSession1 := db.GetUserSession(userId1)
+		sessionId2, isInSession2 := db.GetUserSession(userId2)
+		assert.True(isInSession1)
+		assert.True(isInSession2)
+		assert.Equal(sessionId, sessionId1)
+		assert.Equal(sessionId, sessionId2)
+		assert.Equal(int64(2), db.GetUsersCountInSession(sessionId))
+	}
+
+	db.DisconnectFromSession(userId1)
+
+	{
+		_, isInSession1 := db.GetUserSession(userId1)
+		sessionId2, isInSession2 := db.GetUserSession(userId2)
+		assert.False(isInSession1)
+		assert.True(isInSession2)
+		assert.Equal(sessionId, sessionId2)
+		assert.Equal(int64(1), db.GetUsersCountInSession(sessionId))
+	}
+
+	db.DisconnectFromSession(userId2)
+
+	{
+		_, isInSession1 := db.GetUserSession(userId1)
+		_, isInSession2 := db.GetUserSession(userId2)
+		assert.False(isInSession1)
+		assert.False(isInSession2)
+		assert.Equal(int64(0), db.GetUsersCountInSession(sessionId))
 	}
 }

@@ -26,7 +26,7 @@ func ConnectDb(path string) (database *SpyBotDb, err error) {
 		return
 	}
 
-	//database.db.Exec("PRAGMA foreign_keys = ON")
+	database.db.Exec("PRAGMA foreign_keys = ON")
 
 	database.db.Exec("CREATE TABLE IF NOT EXISTS" +
 		" global_vars(name TEXT PRIMARY KEY" +
@@ -35,13 +35,26 @@ func ConnectDb(path string) (database *SpyBotDb, err error) {
 		")")
 
 	database.db.Exec("CREATE TABLE IF NOT EXISTS" +
+		" sessions(id INTEGER NOT NULL PRIMARY KEY" +
+		")")
+
+	database.db.Exec("CREATE TABLE IF NOT EXISTS" +
 		" users(id INTEGER NOT NULL PRIMARY KEY" +
 		",chat_id INTEGER UNIQUE NOT NULL" +
 		",language TEXT NOT NULL" +
+
+		// session related data
+		",is_ready INTEGER NOT NULL" +
+		",current_session INTEGER" +
+		",current_session_message INTEGER" +
+		",FOREIGN KEY(current_session) REFERENCES sessions(id) ON DELETE SET NULL" +
 		")")
 
 	database.db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS" +
 		" chat_id_index ON users(chat_id)")
+
+	database.db.Exec("CREATE INDEX IF NOT EXISTS" +
+		" current_session_index ON users(current_session)")
 
 	return
 }
@@ -98,8 +111,8 @@ func (database *SpyBotDb) GetUserId(chatId int64, userLangCode string) (userId i
 	database.mutex.Lock()
 	defer database.mutex.Unlock()
 
-	database.db.Exec(fmt.Sprintf("INSERT OR IGNORE INTO users(chat_id, language) "+
-		"VALUES (%d, '%s')", chatId, userLangCode))
+	database.db.Exec(fmt.Sprintf("INSERT OR IGNORE INTO users(chat_id, language, is_ready) "+
+		"VALUES (%d, '%s', 0)", chatId, userLangCode))
 
 	rows, err := database.db.Query(fmt.Sprintf("SELECT id FROM users WHERE chat_id=%d", chatId))
 	if err != nil {
@@ -203,6 +216,109 @@ func (database *SpyBotDb) GetUserLanguage(userId int64) (language string) {
 		}
 		// empty language
 	}
+
+	return
+}
+
+func (database *SpyBotDb) GetUserSession(userId int64) (sessionId int64, isInSession bool) {
+	database.mutex.Lock()
+	defer database.mutex.Unlock()
+
+	rows, err := database.db.Query(fmt.Sprintf("SELECT current_session FROM users WHERE id=%d AND current_session IS NOT NULL", userId))
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	defer rows.Close()
+
+	if rows.Next() {
+		err := rows.Scan(&sessionId)
+		if err != nil {
+			log.Fatal(err.Error())
+		} else {
+			isInSession = true
+		}
+	} else {
+		err = rows.Err()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	return
+}
+
+func (database *SpyBotDb) CreateSession(userId int64) (sessionId int64) {
+	database.DisconnectFromSession(userId)
+
+	database.mutex.Lock()
+	defer database.mutex.Unlock()
+
+	database.db.Exec("INSERT INTO sessions DEFAULT VALUES")
+
+	sessionId = database.getLastInsertedItemId()
+
+	database.db.Exec(fmt.Sprintf("UPDATE OR ROLLBACK users SET current_session=%d WHERE id=%d", sessionId, userId))
+
+	return
+}
+
+func (database *SpyBotDb) ConnectToSession(userId int64, sessionId int64) {
+	database.DisconnectFromSession(userId)
+
+	database.mutex.Lock()
+	defer database.mutex.Unlock()
+
+	// ToDo: should we check that the session is valid?
+	database.db.Exec(fmt.Sprintf("UPDATE OR ROLLBACK users SET current_session=%d WHERE id=%d", sessionId, userId))
+
+	return
+}
+
+func (database *SpyBotDb) GetUsersCountInSession(sessionId int64) (usersCount int64) {
+	database.mutex.Lock()
+	defer database.mutex.Unlock()
+
+	rows, err := database.db.Query(fmt.Sprintf("SELECT COUNT(*) FROM users WHERE current_session=%d", sessionId))
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	defer rows.Close()
+
+	if rows.Next() {
+		err := rows.Scan(&usersCount)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+	} else {
+		err = rows.Err()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	return
+}
+
+func (database *SpyBotDb) DisconnectFromSession(userId int64) {
+	sessionId, isInSession := database.GetUserSession(userId)
+
+	if !isInSession {
+		return
+	}
+
+	database.mutex.Lock()
+	defer database.mutex.Unlock()
+
+	database.db.Exec(fmt.Sprintf("UPDATE OR ROLLBACK users SET current_session=NULL WHERE id=%d", userId))
+
+	// delete session if it's empty
+	database.mutex.Unlock()
+	if database.GetUsersCountInSession(sessionId) == 0 {
+		database.mutex.Lock()
+		database.db.Exec(fmt.Sprintf("DELETE FROM sessions WHERE id=%d", sessionId))
+		database.mutex.Unlock()
+	}
+	database.mutex.Lock()
 
 	return
 }

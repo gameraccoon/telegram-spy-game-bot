@@ -17,6 +17,16 @@ func startCommand(data *processing.ProcessData) {
 	//	data.SendDialog(data.Static.MakeDialogFn("lc", data.UserId, data.Trans, data.Static))
 }
 
+func sessionCommand(data *processing.ProcessData) {
+	_, isInSession := staticFunctions.GetDb(data.Static).GetUserSession(data.UserId)
+	if isInSession {
+		data.SendDialog(data.Static.MakeDialogFn("se", data.UserId, data.Trans, data.Static))
+	} else {
+		data.SendDialog(data.Static.MakeDialogFn("ns", data.UserId, data.Trans, data.Static))
+	}
+	data.Static.SetUserStateTextProcessor(data.UserId, nil)
+}
+
 func settingsCommand(data *processing.ProcessData) {
 	data.SendDialog(data.Static.MakeDialogFn("us", data.UserId, data.Trans, data.Static))
 }
@@ -33,6 +43,7 @@ func cancelCommand(data *processing.ProcessData) {
 func makeUserCommandProcessors() ProcessorFuncMap {
 	return map[string]ProcessorFunc{
 		"start":    startCommand,
+		"session":  sessionCommand,
 		"settings": settingsCommand,
 		"help":     helpCommand,
 		"cancel":   cancelCommand,

@@ -92,6 +92,8 @@ func main() {
 	dialogManager := &(dialogManager.DialogManager{})
 	dialogManager.RegisterDialogFactory("us", dialogFactories.MakeUserSettingsDialogFactory())
 	dialogManager.RegisterDialogFactory("lc", dialogFactories.MakeLanguageSelectDialogFactory())
+	dialogManager.RegisterDialogFactory("se", dialogFactories.MakeSessionDialogFactory())
+	dialogManager.RegisterDialogFactory("ns", dialogFactories.MakeNoSessionDialogFactory())
 	dialogManager.RegisterTextInputProcessorManager(dialogFactories.GetTextInputProcessorManager())
 
 	staticData := &processing.StaticProccessStructs{
