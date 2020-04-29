@@ -18,9 +18,16 @@ func GetTextInputProcessorManager() dialogManager.TextInputProcessorManager {
 func processConnectSession(additionalId int64, data *processing.ProcessData) bool {
 	sessionId, err := strconv.ParseInt(data.Message, 10, 64)
 	if err == nil {
-		successfullyConnected := staticFunctions.GetDb(data.Static).ConnectToSession(data.UserId, sessionId)
+		successfullyConnected, previousSessionId, wasInSession := staticFunctions.GetDb(data.Static).ConnectToSession(data.UserId, sessionId)
 		if successfullyConnected {
-			data.SendDialog(data.Static.MakeDialogFn("se", data.UserId, data.Trans, data.Static))
+			staticFunctions.SendSessionDialog(data)
+
+			staticFunctions.UpdateSessionDialogs(sessionId, data.Static)
+
+			if wasInSession {
+				staticFunctions.UpdateSessionDialogs(previousSessionId, data.Static)
+			}
+
 			return true
 		}
 	}
@@ -28,6 +35,6 @@ func processConnectSession(additionalId int64, data *processing.ProcessData) boo
 	data.Static.SetUserStateTextProcessor(data.UserId, &processing.AwaitingTextProcessorData{
 		ProcessorId: "connectSession",
 	})
-	data.SendMessage(data.Trans("session_not_found"))
+	data.SendMessage(data.Trans("session_not_found_try_again"))
 	return true
 }

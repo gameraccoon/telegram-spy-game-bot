@@ -77,3 +77,21 @@ func FormatTimestamp(timestamp time.Time, timezone string) string {
 		return timestamp.Format("15:04:05 _2.01.2006")
 	}
 }
+
+func SendSessionDialog(data *processing.ProcessData) {
+	messageId := data.SendDialog(data.Static.MakeDialogFn("se", data.UserId, data.Trans, data.Static))
+	GetDb(data.Static).SetSessionMessageId(data.UserId, messageId)
+}
+
+func UpdateSessionDialogs(sessionId int64, staticData *processing.StaticProccessStructs) {
+	users := GetDb(staticData).GetUsersInSession(sessionId)
+	db := GetDb(staticData)
+
+	for _, userId := range users {
+		trans := FindTransFunction(userId, staticData)
+		dialog := staticData.MakeDialogFn("se", userId, trans, staticData)
+		chatId := db.GetChatId(userId)
+		messageId := db.GetSessionMessageId(userId)
+		staticData.Chat.SendDialog(chatId, dialog, messageId)
+	}
+}

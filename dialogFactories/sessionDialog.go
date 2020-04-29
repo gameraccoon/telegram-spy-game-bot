@@ -61,8 +61,11 @@ func testAction(userId int64, data *processing.ProcessData) bool {
 }
 
 func disconnectSession(userId int64, data *processing.ProcessData) bool {
-	staticFunctions.GetDb(data.Static).DisconnectFromSession(userId)
+	sessionId, wasInSession := staticFunctions.GetDb(data.Static).DisconnectFromSession(userId)
 	data.SubstitudeDialog(data.Static.MakeDialogFn("ns", data.UserId, data.Trans, data.Static))
+	if wasInSession {
+		staticFunctions.UpdateSessionDialogs(sessionId, data.Static)
+	}
 	return true
 }
 

@@ -20,7 +20,7 @@ func startCommand(data *processing.ProcessData) {
 func sessionCommand(data *processing.ProcessData) {
 	_, isInSession := staticFunctions.GetDb(data.Static).GetUserSession(data.UserId)
 	if isInSession {
-		data.SendDialog(data.Static.MakeDialogFn("se", data.UserId, data.Trans, data.Static))
+		staticFunctions.SendSessionDialog(data)
 	} else {
 		data.SendDialog(data.Static.MakeDialogFn("ns", data.UserId, data.Trans, data.Static))
 	}

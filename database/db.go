@@ -137,6 +137,33 @@ func (database *SpyBotDb) GetUserId(chatId int64, userLangCode string) (userId i
 	return
 }
 
+func (database *SpyBotDb) GetChatId(userId int64) (chatId int64) {
+	database.mutex.Lock()
+	defer database.mutex.Unlock()
+
+	rows, err := database.db.Query(fmt.Sprintf("SELECT chat_id FROM users WHERE id=%d", userId))
+	if err != nil {
+		log.Fatal(err.Error())
+		return
+	}
+	defer rows.Close()
+
+	if rows.Next() {
+		err := rows.Scan(&chatId)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+	} else {
+		err = rows.Err()
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Fatal("No user found")
+	}
+
+	return
+}
+
 func (database *SpyBotDb) GetUserChatId(userId int64) (chatId int64) {
 	database.mutex.Lock()
 	defer database.mutex.Unlock()
@@ -262,8 +289,8 @@ func (database *SpyBotDb) DoesSessionExist(sessionId int64) (isExists bool) {
 	return
 }
 
-func (database *SpyBotDb) CreateSession(userId int64) (sessionId int64) {
-	database.DisconnectFromSession(userId)
+func (database *SpyBotDb) CreateSession(userId int64) (sessionId int64, previousSessionId int64, wasInSession bool) {
+	previousSessionId, wasInSession = database.DisconnectFromSession(userId)
 
 	database.mutex.Lock()
 	defer database.mutex.Unlock()
@@ -277,20 +304,20 @@ func (database *SpyBotDb) CreateSession(userId int64) (sessionId int64) {
 	return
 }
 
-func (database *SpyBotDb) ConnectToSession(userId int64, sessionId int64) (isSucceeded bool) {
+func (database *SpyBotDb) ConnectToSession(userId int64, sessionId int64) (isSucceeded bool, previousSessionId int64, wasInSession bool) {
 	if !database.DoesSessionExist(sessionId) {
-		return false
+		return
 	}
 
-	database.DisconnectFromSession(userId)
+	previousSessionId, wasInSession = database.DisconnectFromSession(userId)
 
 	database.mutex.Lock()
 	defer database.mutex.Unlock()
 
-	// ToDo: should we check that the session is valid?
 	database.db.Exec(fmt.Sprintf("UPDATE OR ROLLBACK users SET current_session=%d WHERE id=%d", sessionId, userId))
 
-	return true
+	isSucceeded = true
+	return
 }
 
 func (database *SpyBotDb) GetUsersCountInSession(sessionId int64) (usersCount int64) {
@@ -318,10 +345,32 @@ func (database *SpyBotDb) GetUsersCountInSession(sessionId int64) (usersCount in
 	return
 }
 
-func (database *SpyBotDb) DisconnectFromSession(userId int64) {
-	sessionId, isInSession := database.GetUserSession(userId)
+func (database *SpyBotDb) GetUsersInSession(sessionId int64) (users []int64) {
+	database.mutex.Lock()
+	defer database.mutex.Unlock()
 
-	if !isInSession {
+	rows, err := database.db.Query(fmt.Sprintf("SELECT id FROM users WHERE current_session=%d", sessionId))
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var userId int64
+		err := rows.Scan(&userId)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+		users = append(users, userId)
+	}
+
+	return
+}
+
+func (database *SpyBotDb) DisconnectFromSession(userId int64) (sessionId int64, wasInSession bool) {
+	sessionId, wasInSession = database.GetUserSession(userId)
+
+	if !wasInSession {
 		return
 	}
 
@@ -338,6 +387,38 @@ func (database *SpyBotDb) DisconnectFromSession(userId int64) {
 		database.mutex.Unlock()
 	}
 	database.mutex.Lock()
+
+	return
+}
+
+func (database *SpyBotDb) SetSessionMessageId(userId int64, messageId int64) {
+	database.mutex.Lock()
+	defer database.mutex.Unlock()
+
+	database.db.Exec(fmt.Sprintf("UPDATE OR ROLLBACK users SET current_session_message=%d WHERE id=%d", messageId, userId))
+}
+
+func (database *SpyBotDb) GetSessionMessageId(userId int64) (messageId int64) {
+	database.mutex.Lock()
+	defer database.mutex.Unlock()
+
+	rows, err := database.db.Query(fmt.Sprintf("SELECT current_session_message FROM users WHERE id=%d AND current_session_message IS NOT NULL", userId))
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	defer rows.Close()
+
+	if rows.Next() {
+		err := rows.Scan(&messageId)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+	} else {
+		err = rows.Err()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 
 	return
 }

@@ -49,8 +49,11 @@ func connectToSession(data *processing.ProcessData) bool {
 }
 
 func createNewSession(data *processing.ProcessData) bool {
-	staticFunctions.GetDb(data.Static).CreateSession(data.UserId)
-	data.SendDialog(data.Static.MakeDialogFn("se", data.UserId, data.Trans, data.Static))
+	_, previousSessionId, wasInSession := staticFunctions.GetDb(data.Static).CreateSession(data.UserId)
+	staticFunctions.SendSessionDialog(data)
+	if wasInSession {
+		staticFunctions.UpdateSessionDialogs(previousSessionId, data.Static)
+	}
 	return true
 }
 

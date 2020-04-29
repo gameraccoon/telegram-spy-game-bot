@@ -180,7 +180,7 @@ func TestUserSession(t *testing.T) {
 	userId1 := db.GetUserId(123, "")
 	userId2 := db.GetUserId(321, "")
 
-	sessionId := db.CreateSession(userId1)
+	sessionId, _, _ := db.CreateSession(userId1)
 	assert.True(db.DoesSessionExist(sessionId))
 
 	{
@@ -190,6 +190,12 @@ func TestUserSession(t *testing.T) {
 		assert.False(isInSession2)
 		assert.Equal(sessionId, sessionId1)
 		assert.Equal(int64(1), db.GetUsersCountInSession(sessionId1))
+
+		users := db.GetUsersInSession(sessionId)
+		assert.Equal(1, len(users))
+		if len(users) > 0 {
+			assert.Equal(userId1, users[0])
+		}
 	}
 
 	db.ConnectToSession(userId2, sessionId)
@@ -226,4 +232,21 @@ func TestUserSession(t *testing.T) {
 		assert.False(isInSession2)
 		assert.Equal(int64(0), db.GetUsersCountInSession(sessionId))
 	}
+}
+
+func TestSessionMessageId(t *testing.T) {
+	assert := require.New(t)
+	db := createDbAndConnect(t)
+	defer clearDb()
+	if db == nil {
+		t.Fail()
+		return
+	}
+	defer db.Disconnect()
+
+	userId1 := db.GetUserId(123, "")
+	sessionMessageId := int64(32)
+
+	db.SetSessionMessageId(userId1, sessionMessageId)
+	assert.Equal(sessionMessageId, db.GetSessionMessageId(userId1))
 }
