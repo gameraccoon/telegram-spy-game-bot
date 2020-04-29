@@ -85,9 +85,11 @@ func (factory *sessionDialogFactory) MakeDialog(userId int64, trans i18n.Transla
 	db := staticFunctions.GetDb(staticData)
 
 	sessionId, _ := db.GetUserSession(userId)
+	countInSession := db.GetUsersCountInSession(sessionId)
 
 	translationMap := map[string]interface{} {
 		"SessionId": sessionId,
+		"Participants": countInSession,
 	}
 
 	return &dialog.Dialog{
