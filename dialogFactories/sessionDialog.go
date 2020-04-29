@@ -6,7 +6,6 @@ import (
 	"github.com/gameraccoon/telegram-bot-skeleton/processing"
 	"github.com/nicksnyder/go-i18n/i18n"
 	"github.com/gameraccoon/telegram-spy-game-bot/staticFunctions"
-	static "github.com/gameraccoon/telegram-spy-game-bot/staticData"
 )
 
 type sessionVariantPrototype struct {
@@ -85,29 +84,14 @@ func (factory *sessionDialogFactory) createVariants(trans i18n.TranslateFunc) (v
 func (factory *sessionDialogFactory) MakeDialog(userId int64, trans i18n.TranslateFunc, staticData *processing.StaticProccessStructs) *dialog.Dialog {
 	db := staticFunctions.GetDb(staticData)
 
-	language := db.GetUserLanguage(userId)
-
-	config, configCastSuccess := staticData.Config.(static.StaticConfiguration)
-
-	if !configCastSuccess {
-		config = static.StaticConfiguration{}
-	}
-
-	langName := language
-
-	for _, lang := range config.AvailableLanguages {
-		if lang.Key == language {
-			langName = lang.Name
-			break
-		}
-	}
+	sessionId, _ := db.GetUserSession(userId)
 
 	translationMap := map[string]interface{} {
-		"Lang":     langName,
+		"SessionId": sessionId,
 	}
 
 	return &dialog.Dialog{
-		Text:     trans("user_settings_title", translationMap),
+		Text:     trans("session_title", translationMap),
 		Variants: factory.createVariants(trans),
 	}
 }

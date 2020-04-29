@@ -180,17 +180,18 @@ func TestUserSession(t *testing.T) {
 	userId1 := db.GetUserId(123, "")
 	userId2 := db.GetUserId(321, "")
 
-	db.CreateSession(userId1)
+	sessionId := db.CreateSession(userId1)
+	assert.True(db.DoesSessionExist(sessionId))
 
 	{
 		sessionId1, isInSession1 := db.GetUserSession(userId1)
 		_, isInSession2 := db.GetUserSession(userId2)
 		assert.True(isInSession1)
 		assert.False(isInSession2)
+		assert.Equal(sessionId, sessionId1)
 		assert.Equal(int64(1), db.GetUsersCountInSession(sessionId1))
 	}
 
-	sessionId, _ := db.GetUserSession(userId1)
 	db.ConnectToSession(userId2, sessionId)
 
 	{
@@ -204,6 +205,7 @@ func TestUserSession(t *testing.T) {
 	}
 
 	db.DisconnectFromSession(userId1)
+	assert.True(db.DoesSessionExist(sessionId))
 
 	{
 		_, isInSession1 := db.GetUserSession(userId1)
@@ -215,6 +217,7 @@ func TestUserSession(t *testing.T) {
 	}
 
 	db.DisconnectFromSession(userId2)
+	assert.False(db.DoesSessionExist(sessionId))
 
 	{
 		_, isInSession1 := db.GetUserSession(userId1)

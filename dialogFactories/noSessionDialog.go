@@ -12,7 +12,7 @@ import (
 type noSessionVariantPrototype struct {
 	id string
 	textId string
-	process func(int64, *processing.ProcessData) bool
+	process func(*processing.ProcessData) bool
 	rowId int
 	isActiveFn func() bool
 }
@@ -27,7 +27,7 @@ func MakeNoSessionDialogFactory() dialogFactory.DialogFactory {
 			noSessionVariantPrototype{
 				id: "connsess",
 				textId: "connect_to_session",
-				process: testAction2,
+				process: connectToSession,
 				rowId:2,
 			},
 			noSessionVariantPrototype{
@@ -40,14 +40,17 @@ func MakeNoSessionDialogFactory() dialogFactory.DialogFactory {
 	})
 }
 
-func testAction2(userId int64, data *processing.ProcessData) bool {
-	//data.SubstitudeDialog(data.Static.MakeDialogFn("lc", data.UserId, data.Trans, data.Static))
+func connectToSession(data *processing.ProcessData) bool {
+	data.Static.SetUserStateTextProcessor(data.UserId, &processing.AwaitingTextProcessorData{
+		ProcessorId: "connectSession",
+	})
+	data.SendMessage(data.Trans("send_session_id"))
 	return true
 }
 
-func createNewSession(userId int64, data *processing.ProcessData) bool {
-	staticFunctions.GetDb(data.Static).CreateSession(userId)
-	data.SubstitudeDialog(data.Static.MakeDialogFn("se", data.UserId, data.Trans, data.Static))
+func createNewSession(data *processing.ProcessData) bool {
+	staticFunctions.GetDb(data.Static).CreateSession(data.UserId)
+	data.SendDialog(data.Static.MakeDialogFn("se", data.UserId, data.Trans, data.Static))
 	return true
 }
 
@@ -99,7 +102,7 @@ func (factory *noSessionDialogFactory) MakeDialog(userId int64, trans i18n.Trans
 func (factory *noSessionDialogFactory) ProcessVariant(variantId string, additionalId string, data *processing.ProcessData) bool {
 	for _, variant := range factory.variants {
 		if variant.id == variantId {
-			return variant.process(data.UserId, data)
+			return variant.process(data)
 		}
 	}
 	return false

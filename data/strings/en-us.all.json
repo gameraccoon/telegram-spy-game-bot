@@ -2,7 +2,7 @@
 	"start_message": { "other": "Start message here" },
 	"select_language": { "other": "Select your preferred language" },
 	"help_info": { "other": "Help message here" },
-	"settings_title": { "other": "Settings\n" },
+	"session_title": { "other": "Session id: {{.SessionId}}\n" },
 	"back_to_list": { "other": "« Back to the list" },
 	"user_settings_title": { "other": "Settings\n<b>Language</b>: {{.Lang}}" },
 	"change_language": { "other": "Change Language" },

@@ -247,6 +247,21 @@ func (database *SpyBotDb) GetUserSession(userId int64) (sessionId int64, isInSes
 	return
 }
 
+func (database *SpyBotDb) DoesSessionExist(sessionId int64) (isExists bool) {
+	database.mutex.Lock()
+	defer database.mutex.Unlock()
+
+	rows, err := database.db.Query(fmt.Sprintf("SELECT 1 FROM sessions WHERE id=%d LIMIT 1", sessionId))
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	defer rows.Close()
+
+	isExists = rows.Next();
+
+	return
+}
+
 func (database *SpyBotDb) CreateSession(userId int64) (sessionId int64) {
 	database.DisconnectFromSession(userId)
 
@@ -262,7 +277,11 @@ func (database *SpyBotDb) CreateSession(userId int64) (sessionId int64) {
 	return
 }
 
-func (database *SpyBotDb) ConnectToSession(userId int64, sessionId int64) {
+func (database *SpyBotDb) ConnectToSession(userId int64, sessionId int64) (isSucceeded bool) {
+	if !database.DoesSessionExist(sessionId) {
+		return false
+	}
+
 	database.DisconnectFromSession(userId)
 
 	database.mutex.Lock()
@@ -271,7 +290,7 @@ func (database *SpyBotDb) ConnectToSession(userId int64, sessionId int64) {
 	// ToDo: should we check that the session is valid?
 	database.db.Exec(fmt.Sprintf("UPDATE OR ROLLBACK users SET current_session=%d WHERE id=%d", sessionId, userId))
 
-	return
+	return true
 }
 
 func (database *SpyBotDb) GetUsersCountInSession(sessionId int64) (usersCount int64) {
