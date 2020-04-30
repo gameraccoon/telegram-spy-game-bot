@@ -35,23 +35,12 @@ func MakeUserSettingsDialogFactory() dialogFactory.DialogFactory {
 				process: changeLanguage,
 				rowId:1,
 			},
-			userSettingsVariantPrototype{
-				id: "back",
-				textId: "back_to_list",
-				process: backToList,
-				rowId:3,
-			},
 		},
 	})
 }
 
 func changeLanguage(userId int64, data *processing.ProcessData) bool {
 	data.SubstitudeDialog(data.Static.MakeDialogFn("lc", data.UserId, data.Trans, data.Static))
-	return true
-}
-
-func backToList(id int64, data *processing.ProcessData) bool {
-	//data.SubstitudeDialog(data.Static.MakeDialogFn("wl", data.UserId, data.Trans, data.Static))
 	return true
 }
 

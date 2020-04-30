@@ -104,6 +104,7 @@ func main() {
 		MakeDialogFn: func(id string, userId int64, trans i18n.TranslateFunc, staticData *processing.StaticProccessStructs) *dialog.Dialog {
 			return dialogManager.MakeDialog(id, userId, trans, staticData)
 		},
+		BotName: chat.GetBotUsername(),
 	}
 
 	staticData.Init()

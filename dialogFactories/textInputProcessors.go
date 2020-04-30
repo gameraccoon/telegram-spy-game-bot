@@ -18,16 +18,8 @@ func GetTextInputProcessorManager() dialogManager.TextInputProcessorManager {
 func processConnectSession(additionalId int64, data *processing.ProcessData) bool {
 	sessionId, err := strconv.ParseInt(data.Message, 10, 64)
 	if err == nil {
-		successfullyConnected, previousSessionId, wasInSession := staticFunctions.GetDb(data.Static).ConnectToSession(data.UserId, sessionId)
-		if successfullyConnected {
-			staticFunctions.SendSessionDialog(data)
-
-			staticFunctions.UpdateSessionDialogs(sessionId, data.Static)
-
-			if wasInSession {
-				staticFunctions.UpdateSessionDialogs(previousSessionId, data.Static)
-			}
-
+		isSuccessfull := staticFunctions.ConnectToSession(data, sessionId)
+		if isSuccessfull {
 			return true
 		}
 	}

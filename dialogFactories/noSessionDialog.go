@@ -6,7 +6,6 @@ import (
 	"github.com/gameraccoon/telegram-bot-skeleton/processing"
 	"github.com/nicksnyder/go-i18n/i18n"
 	"github.com/gameraccoon/telegram-spy-game-bot/staticFunctions"
-	static "github.com/gameraccoon/telegram-spy-game-bot/staticData"
 )
 
 type noSessionVariantPrototype struct {
@@ -24,12 +23,12 @@ type noSessionDialogFactory struct {
 func MakeNoSessionDialogFactory() dialogFactory.DialogFactory {
 	return &(noSessionDialogFactory{
 		variants: []noSessionVariantPrototype{
-			noSessionVariantPrototype{
+			/*noSessionVariantPrototype{
 				id: "connsess",
 				textId: "connect_to_session",
 				process: connectToSession,
 				rowId:2,
-			},
+			},*/
 			noSessionVariantPrototype{
 				id: "createsess",
 				textId: "create_session",
@@ -73,31 +72,8 @@ func (factory *noSessionDialogFactory) createVariants(trans i18n.TranslateFunc) 
 }
 
 func (factory *noSessionDialogFactory) MakeDialog(userId int64, trans i18n.TranslateFunc, staticData *processing.StaticProccessStructs) *dialog.Dialog {
-	db := staticFunctions.GetDb(staticData)
-
-	language := db.GetUserLanguage(userId)
-
-	config, configCastSuccess := staticData.Config.(static.StaticConfiguration)
-
-	if !configCastSuccess {
-		config = static.StaticConfiguration{}
-	}
-
-	langName := language
-
-	for _, lang := range config.AvailableLanguages {
-		if lang.Key == language {
-			langName = lang.Name
-			break
-		}
-	}
-
-	translationMap := map[string]interface{} {
-		"Lang":     langName,
-	}
-
 	return &dialog.Dialog{
-		Text:     trans("user_settings_title", translationMap),
+		Text:     trans("no_session_title"),
 		Variants: factory.createVariants(trans),
 	}
 }

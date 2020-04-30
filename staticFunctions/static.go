@@ -95,3 +95,19 @@ func UpdateSessionDialogs(sessionId int64, staticData *processing.StaticProccess
 		staticData.Chat.SendDialog(chatId, dialog, messageId)
 	}
 }
+
+func ConnectToSession(data *processing.ProcessData, sessionId int64) (successfull bool) {
+	successfullyConnected, previousSessionId, wasInSession := GetDb(data.Static).ConnectToSession(data.UserId, sessionId)
+	if successfullyConnected {
+		SendSessionDialog(data)
+
+		UpdateSessionDialogs(sessionId, data.Static)
+
+		if wasInSession {
+			UpdateSessionDialogs(previousSessionId, data.Static)
+		}
+
+		return true
+	}
+	return false
+}

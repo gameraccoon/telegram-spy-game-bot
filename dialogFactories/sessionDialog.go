@@ -1,11 +1,13 @@
 package dialogFactories
 
 import (
+	"fmt"
 	"github.com/gameraccoon/telegram-bot-skeleton/dialog"
 	"github.com/gameraccoon/telegram-bot-skeleton/dialogFactory"
 	"github.com/gameraccoon/telegram-bot-skeleton/processing"
 	"github.com/nicksnyder/go-i18n/i18n"
 	"github.com/gameraccoon/telegram-spy-game-bot/staticFunctions"
+	"strconv"
 )
 
 type sessionVariantPrototype struct {
@@ -23,7 +25,7 @@ type sessionDialogFactory struct {
 func MakeSessionDialogFactory() dialogFactory.DialogFactory {
 	return &(sessionDialogFactory{
 		variants: []sessionVariantPrototype{
-			sessionVariantPrototype{
+			/*sessionVariantPrototype{
 				id: "showtheme",
 				textId: "show_theme",
 				process: testAction,
@@ -36,6 +38,11 @@ func MakeSessionDialogFactory() dialogFactory.DialogFactory {
 				process: testAction,
 				isActiveFn: isThemeRevealed,
 				rowId:1,
+			},*/
+			sessionVariantPrototype{
+				id: "share",
+				textId: "share_link",
+				rowId:2,
 			},
 			sessionVariantPrototype{
 				id: "discsess",
@@ -60,8 +67,16 @@ func testAction(userId int64, data *processing.ProcessData) bool {
 	return true
 }
 
-func disconnectSession(userId int64, data *processing.ProcessData) bool {
-	sessionId, wasInSession := staticFunctions.GetDb(data.Static).DisconnectFromSession(userId)
+func disconnectSession(sessionId int64, data *processing.ProcessData) bool {
+	db := staticFunctions.GetDb(data.Static)
+	currentSessionId, isInSession := db.GetUserSession(data.UserId)
+
+	if !isInSession || sessionId != currentSessionId {
+		data.SendMessage(data.Trans("session_is_too_old"))
+		return true
+	}
+
+	_, wasInSession := db.DisconnectFromSession(data.UserId)
 	data.SubstitudeDialog(data.Static.MakeDialogFn("ns", data.UserId, data.Trans, data.Static))
 	if wasInSession {
 		staticFunctions.UpdateSessionDialogs(sessionId, data.Static)
@@ -69,15 +84,26 @@ func disconnectSession(userId int64, data *processing.ProcessData) bool {
 	return true
 }
 
-func (factory *sessionDialogFactory) createVariants(trans i18n.TranslateFunc) (variants []dialog.Variant) {
+func (factory *sessionDialogFactory) createVariants(trans i18n.TranslateFunc, sessionId int64, botName string) (variants []dialog.Variant) {
 	variants = make([]dialog.Variant, 0)
 
 	for _, variant := range factory.variants {
 		if variant.isActiveFn == nil || variant.isActiveFn() {
+			var url string
+			if variant.process == nil {
+				url = fmt.Sprintf(
+					"https://telegram.me/share/url?url=https://t.me/%s?start=%d",
+					botName,
+					sessionId,
+				)
+			}
+
 			variants = append(variants, dialog.Variant{
 				Id:   variant.id,
 				Text: trans(variant.textId),
+				Url: url,
 				RowId: variant.rowId,
+				AdditionalId: strconv.FormatInt(sessionId, 10),
 			})
 		}
 	}
@@ -97,14 +123,15 @@ func (factory *sessionDialogFactory) MakeDialog(userId int64, trans i18n.Transla
 
 	return &dialog.Dialog{
 		Text:     trans("session_title", translationMap),
-		Variants: factory.createVariants(trans),
+		Variants: factory.createVariants(trans, sessionId, staticData.BotName),
 	}
 }
 
 func (factory *sessionDialogFactory) ProcessVariant(variantId string, additionalId string, data *processing.ProcessData) bool {
+	sessionId, _ := strconv.ParseInt(additionalId, 10, 64)
 	for _, variant := range factory.variants {
 		if variant.id == variantId {
-			return variant.process(data.UserId, data)
+			return variant.process(sessionId, data)
 		}
 	}
 	return false
