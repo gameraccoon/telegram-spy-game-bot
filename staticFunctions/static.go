@@ -96,18 +96,25 @@ func UpdateSessionDialogs(sessionId int64, staticData *processing.StaticProccess
 	}
 }
 
-func ConnectToSession(data *processing.ProcessData, sessionId int64) (successfull bool) {
-	successfullyConnected, previousSessionId, wasInSession := GetDb(data.Static).ConnectToSession(data.UserId, sessionId)
-	if successfullyConnected {
-		SendSessionDialog(data)
-
-		UpdateSessionDialogs(sessionId, data.Static)
-
-		if wasInSession {
-			UpdateSessionDialogs(previousSessionId, data.Static)
-		}
-
-		return true
+func ConnectToSession(data *processing.ProcessData, token string) (successfull bool) {
+	db := GetDb(data.Static)
+	sessionId, isFound := db.GetSessionIdFromToken(token)
+	if !isFound {
+		return false
 	}
-	return false
+
+	successfullyConnected, previousSessionId, wasInSession := db.ConnectToSession(data.UserId, sessionId)
+	if !successfullyConnected {
+		return false
+	}
+
+	SendSessionDialog(data)
+
+	UpdateSessionDialogs(sessionId, data.Static)
+
+	if wasInSession {
+		UpdateSessionDialogs(previousSessionId, data.Static)
+	}
+
+	return true
 }

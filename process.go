@@ -4,27 +4,12 @@ import (
 	"github.com/gameraccoon/telegram-bot-skeleton/dialogManager"
 	"github.com/gameraccoon/telegram-bot-skeleton/processing"
 	"github.com/gameraccoon/telegram-spy-game-bot/staticFunctions"
-	"strconv"
 	"strings"
 )
 
 type ProcessorFunc func(*processing.ProcessData)
 
 type ProcessorFuncMap map[string]ProcessorFunc
-
-func startCommand(data *processing.ProcessData) {
-	sessionId, err := strconv.ParseInt(data.Message, 10, 64)
-	if err == nil {
-		isSuccessfull := staticFunctions.ConnectToSession(data, sessionId)
-		if isSuccessfull {
-			return
-		}
-	}
-
-	data.SendMessage(data.Trans("start_message"))
-	data.Static.SetUserStateTextProcessor(data.UserId, nil)
-	//	data.SendDialog(data.Static.MakeDialogFn("lc", data.UserId, data.Trans, data.Static))
-}
 
 func sessionCommand(data *processing.ProcessData) {
 	_, isInSession := staticFunctions.GetDb(data.Static).GetUserSession(data.UserId)
@@ -33,6 +18,22 @@ func sessionCommand(data *processing.ProcessData) {
 	} else {
 		data.SendDialog(data.Static.MakeDialogFn("ns", data.UserId, data.Trans, data.Static))
 	}
+	data.Static.SetUserStateTextProcessor(data.UserId, nil)
+}
+
+func startCommand(data *processing.ProcessData) {
+	if len(data.Message) > 0 {
+		isSuccessfull := staticFunctions.ConnectToSession(data, data.Message)
+		if isSuccessfull {
+			return
+		}
+
+		data.SendMessage(data.Trans("link_session_is_old"))
+	} else {
+		data.SendMessage(data.Trans("start_message"))
+	}
+
+	sessionCommand(data)
 	data.Static.SetUserStateTextProcessor(data.UserId, nil)
 }
 
@@ -51,8 +52,8 @@ func cancelCommand(data *processing.ProcessData) {
 
 func makeUserCommandProcessors() ProcessorFuncMap {
 	return map[string]ProcessorFunc{
-		"start":    startCommand,
 		"session":  sessionCommand,
+		"start":    startCommand,
 		"settings": settingsCommand,
 		"help":     helpCommand,
 		"cancel":   cancelCommand,

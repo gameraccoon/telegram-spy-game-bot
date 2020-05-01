@@ -36,6 +36,7 @@ func ConnectDb(path string) (database *SpyBotDb, err error) {
 
 	database.db.Exec("CREATE TABLE IF NOT EXISTS" +
 		" sessions(id INTEGER NOT NULL PRIMARY KEY" +
+		",token TEXT NOT NULL" +
 		")")
 
 	database.db.Exec("CREATE TABLE IF NOT EXISTS" +
@@ -52,6 +53,9 @@ func ConnectDb(path string) (database *SpyBotDb, err error) {
 
 	database.db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS" +
 		" chat_id_index ON users(chat_id)")
+
+	database.db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS" +
+		" token_index ON sessions(token)")
 
 	database.db.Exec("CREATE INDEX IF NOT EXISTS" +
 		" current_session_index ON users(current_session)")
@@ -295,7 +299,7 @@ func (database *SpyBotDb) CreateSession(userId int64) (sessionId int64, previous
 	database.mutex.Lock()
 	defer database.mutex.Unlock()
 
-	database.db.Exec("INSERT INTO sessions DEFAULT VALUES")
+	database.db.Exec("INSERT INTO sessions (token) VALUES (strftime('%s', 'now') || '-' || abs(random() % 100000))")
 
 	sessionId = database.getLastInsertedItemId()
 
@@ -412,6 +416,60 @@ func (database *SpyBotDb) GetSessionMessageId(userId int64) (messageId int64) {
 		err := rows.Scan(&messageId)
 		if err != nil {
 			log.Fatal(err.Error())
+		}
+	} else {
+		err = rows.Err()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	return
+}
+
+func (database *SpyBotDb) GetSessionIdFromToken(token string) (sessionId int64, isFound bool) {
+	database.mutex.Lock()
+	defer database.mutex.Unlock()
+
+	rows, err := database.db.Query(fmt.Sprintf("SELECT id FROM sessions WHERE token='%s' LIMIT 1", dbBase.SanitizeString(token)))
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	defer rows.Close()
+
+	if rows.Next() {
+		err := rows.Scan(&sessionId)
+		if err != nil {
+			log.Fatal(err.Error())
+		} else {
+			isFound = true
+		}
+	} else {
+		err = rows.Err()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	return
+}
+
+func (database *SpyBotDb) GetTokenFromSessionId(sessionId int64) (token string, isFound bool) {
+	database.mutex.Lock()
+	defer database.mutex.Unlock()
+
+	rows, err := database.db.Query(fmt.Sprintf("SELECT token FROM sessions WHERE id=%d LIMIT 1", sessionId))
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	defer rows.Close()
+
+	if rows.Next() {
+		err := rows.Scan(&token)
+		if err != nil {
+			log.Fatal(err.Error())
+		} else {
+			isFound = true
 		}
 	} else {
 		err = rows.Err()

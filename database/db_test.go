@@ -184,6 +184,14 @@ func TestUserSession(t *testing.T) {
 	assert.True(db.DoesSessionExist(sessionId))
 
 	{
+		token, isFound1 := db.GetTokenFromSessionId(sessionId)
+		newSessionId, isFound2 := db.GetSessionIdFromToken(token)
+		assert.True(isFound1)
+		assert.True(isFound2)
+		assert.Equal(sessionId, newSessionId)
+	}
+
+	{
 		sessionId1, isInSession1 := db.GetUserSession(userId1)
 		_, isInSession2 := db.GetUserSession(userId2)
 		assert.True(isInSession1)
@@ -197,7 +205,7 @@ func TestUserSession(t *testing.T) {
 			assert.Equal(userId1, users[0])
 		}
 	}
-
+	
 	db.ConnectToSession(userId2, sessionId)
 
 	{
