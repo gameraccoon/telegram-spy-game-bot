@@ -1,10 +1,17 @@
 {
-	"start_message": { "other": "Start message here" },
+	"start_message": { "other": "You can use this bot to play games like Spyfall with your friends. Just create a session, share the invitation link and send the topic. All the users except one will receive it, this one user will receive 'You are the Spy' message." },
 	"select_language": { "other": "Select your preferred language" },
-	"help_info": { "other": "Help message here" },
-	"session_title": { "other": "Session id: {{.SessionId}}\nParticipants: {{.Participants}}" },
+	"help_info": { "other": "You can use this bot to play games like Spyfall with your friends. Just create a session, share the invitation link and send the topic. All the users except one will receive it, this one user will receive 'You are the Spy' message." },
+	"session_title": { "other": "You are in a session.\nParticipants: {{.Participants}}" },
 	"no_session_title": { "other": "You're not in a session" },
 	"user_settings_title": { "other": "Settings\n<b>Language</b>: {{.Lang}}" },
 	"change_language": { "other": "Change Language" },
-	"command_canceled": { "other": "If there was some action I canceled it" }
+	"command_canceled": { "other": "If there was some action I canceled it" },
+	"link_session_is_old": { "other": "The link that you've used leads to an old session. Request a new link or create a new session." },
+	"send_session_id": { "other": "Send token of the session you want to join" },
+	"session_is_too_old": { "other": "This session message is too old. Use /session command to see the latest session info" },
+	"session_not_found_try_again": { "other": "A session with such an id is not found. Check the token correctness and try again" },
+	"create_session": { "other": "Create session" },
+	"share_link": { "other": "Share invite link" },
+	"disconnect_session": { "other": "Disconnect" }
 }

@@ -101,7 +101,6 @@ func (factory *sessionDialogFactory) MakeDialog(userId int64, trans i18n.Transla
 	countInSession := db.GetUsersCountInSession(sessionId)
 
 	translationMap := map[string]interface{} {
-		"SessionId": sessionId,
 		"Participants": countInSession,
 	}
 
