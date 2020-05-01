@@ -79,7 +79,7 @@
 	"spyfall_role_circus_clown": { "other": "Clown" },
 	"spyfall_role_circus_juggler": { "other": "Juggler" },
 
-	"spyfall_loc_corporateparty": { "other": "Corporate party" },
+	"spyfall_loc_corporateparty": { "other": "Corporate Party" },
 	"spyfall_role_corporateparty_entertainer": { "other": "Entertainer" },
 	"spyfall_role_corporateparty_manager": { "other": "Manager" },
 	"spyfall_role_corporateparty_partycrasher": { "other": "Party crasher" },
@@ -88,7 +88,7 @@
 	"spyfall_role_corporateparty_accountant": { "other": "Accountant" },
 	"spyfall_role_corporateparty_deliveryboy": { "other": "Delivery boy" },
 
-	"spyfall_loc_crusaderarmy": { "other": "Crusader army" },
+	"spyfall_loc_crusaderarmy": { "other": "Crusader Army" },
 	"spyfall_role_crusaderarmy_monk": { "other": "Monk" },
 	"spyfall_role_crusaderarmy_imprisonedarab": { "other": "Imprisoned arab" },
 	"spyfall_role_crusaderarmy_servant": { "other": "Servant" },
@@ -97,7 +97,7 @@
 	"spyfall_role_crusaderarmy_archer": { "other": "Archer" },
 	"spyfall_role_crusaderarmy_knight": { "other": "Knight" },
 
-	"spyfall_loc_dayspa": { "other": "Day spa" },
+	"spyfall_loc_dayspa": { "other": "Day Spa" },
 	"spyfall_role_dayspa_customer": { "other": "Customer" },
 	"spyfall_role_dayspa_stylist": { "other": "Stylist" },
 	"spyfall_role_dayspa_massagetech": { "other": "Massage tech" },
@@ -133,7 +133,7 @@
 	"spyfall_role_hotel_bartender": { "other": "Bartender" },
 	"spyfall_role_hotel_valet": { "other": "Valet" },
 
-	"spyfall_loc_militarybase": { "other": "Military base" },
+	"spyfall_loc_militarybase": { "other": "Military Base" },
 	"spyfall_role_militarybase_deserter": { "other": "Deserter" },
 	"spyfall_role_militarybase_colonel": { "other": "Colonel" },
 	"spyfall_role_militarybase_medic": { "other": "Medic" },
@@ -142,7 +142,7 @@
 	"spyfall_role_militarybase_execofficer": { "other": "XO (Exec. Officer)" },
 	"spyfall_role_militarybase_tankcommander": { "other": "Tank commander" },
 
-	"spyfall_loc_moviestudio": { "other": "Movie studio" },
+	"spyfall_loc_moviestudio": { "other": "Movie Studio" },
 	"spyfall_role_moviestudio_stuntman": { "other": "Stuntman" },
 	"spyfall_role_moviestudio_soundengineer": { "other": "Sound engineer" },
 	"spyfall_role_moviestudio_cameraman": { "other": "Cameraman" },
@@ -151,7 +151,7 @@
 	"spyfall_role_moviestudio_actor": { "other": "Actor" },
 	"spyfall_role_moviestudio_producer": { "other": "Producer" },
 
-	"spyfall_loc_oceanliner": { "other": "Ocean liner" },
+	"spyfall_loc_oceanliner": { "other": "Ocean Liner" },
 	"spyfall_role_oceanliner_richpassenger": { "other": "Rich passenger" },
 	"spyfall_role_oceanliner_cook": { "other": "Cook" },
 	"spyfall_role_oceanliner_captain": { "other": "Captain" },
@@ -160,7 +160,7 @@
 	"spyfall_role_oceanliner_waiter": { "other": "Waiter" },
 	"spyfall_role_oceanliner_shipmechanic": { "other": "Ship's mechanic" },
 
-	"spyfall_loc_passengertrain": { "other": "Passenger train" },
+	"spyfall_loc_passengertrain": { "other": "Passenger Train" },
 	"spyfall_role_passengertrain_mechanic": { "other": "Mechanic" },
 	"spyfall_role_passengertrain_boarderpatrol": { "other": "Boarder patrol" },
 	"spyfall_role_passengertrain_chef": { "other": "Chef" },
@@ -169,7 +169,7 @@
 	"spyfall_role_passengertrain_tickettaker": { "other": "Ticket taker" },
 	"spyfall_role_passengertrain_passenger": { "other": "Passenger" },
 
-	"spyfall_loc_pirateship": { "other": "Pirate ship" },
+	"spyfall_loc_pirateship": { "other": "Pirate Ship" },
 	"spyfall_role_pirateship_cook": { "other": "Cook" },
 	"spyfall_role_pirateship_sailor": { "other": "Sailor" },
 	"spyfall_role_pirateship_slave": { "other": "Slave" },
@@ -178,7 +178,7 @@
 	"spyfall_role_pirateship_cabinboy": { "other": "Cabin boy" },
 	"spyfall_role_pirateship_piratecaptain": { "other": "Pirate captain" },
 
-	"spyfall_loc_polarstation": { "other": "Polar station" },
+	"spyfall_loc_polarstation": { "other": "Polar Station" },
 	"spyfall_role_polarstation_medic": { "other": "Medic" },
 	"spyfall_role_polarstation_geologist": { "other": "Geologist" },
 	"spyfall_role_polarstation_expeditionleader": { "other": "Expedition leader" },
@@ -187,7 +187,7 @@
 	"spyfall_role_polarstation_hydrologist": { "other": "Hydrologist" },
 	"spyfall_role_polarstation_meteorologist": { "other": "Meteorologist" },
 
-	"spyfall_loc_policestation": { "other": "Police station" },
+	"spyfall_loc_policestation": { "other": "Police Station" },
 	"spyfall_role_policestation_detective": { "other": "Detective" },
 	"spyfall_role_policestation_lawyer": { "other": "Lawyer" },
 	"spyfall_role_policestation_journalist": { "other": "Journalist" },
@@ -214,7 +214,7 @@
 	"spyfall_role_school_lunchlady": { "other": "Lunch lady" },
 	"spyfall_role_school_maintenanceman": { "other": "Maintenance man" },
 
-	"spyfall_loc_servicestation": { "other": "Service station" },
+	"spyfall_loc_servicestation": { "other": "Service Station" },
 	"spyfall_role_servicestation_manager": { "other": "Manager" },
 	"spyfall_role_servicestation_tirespecialist": { "other": "Tire specialist" },
 	"spyfall_role_servicestation_motorcyclist": { "other": "Motorcyclist" },
@@ -223,7 +223,7 @@
 	"spyfall_role_servicestation_diagnostictech": { "other": "Diagnostic tech" },
 	"spyfall_role_servicestation_automechanic": { "other": "Auto mechanic" },
 
-	"spyfall_loc_spacestation": { "other": "Space station" },
+	"spyfall_loc_spacestation": { "other": "Space Station" },
 	"spyfall_role_spacestation_engineer": { "other": "Engineer" },
 	"spyfall_role_spacestation_alien": { "other": "Alien" },
 	"spyfall_role_spacestation_tourist": { "other": "Tourist" },
