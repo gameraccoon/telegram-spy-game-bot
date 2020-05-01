@@ -24,6 +24,7 @@
 
 	"spyfall_theme": { "other": "Location: {{.Location}}\nRole: {{.Role}}" },
 	"spyfall_theme_spy": { "other": "Location: Unknown\nYou are the Spy" },
+	"send_spyfall_location": { "other": "Send Spyfall location" },
 
 	"spyfall_loc_airplane": { "other": "Airplane" },
 	"spyfall_role_airplane_1stclasspassenger": { "other": "1st class passenger" },
