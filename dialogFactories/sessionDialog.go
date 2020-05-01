@@ -37,20 +37,12 @@ func MakeSessionDialogFactory() dialogFactory.DialogFactory {
 				process: disconnectSession,
 				rowId:1,
 			},
-			/*sessionVariantPrototype{
-				id: "showtheme",
-				textId: "show_theme",
-				process: testAction,
-				isActiveFn: isThemeHidden,
+			sessionVariantPrototype{
+				id: "spyfallloc",
+				textId: "send_spyfall_location",
+				process: sendSpyfallLocation,
 				rowId:2,
 			},
-			sessionVariantPrototype{
-				id: "hidetheme",
-				textId: "hide_theme",
-				process: testAction,
-				isActiveFn: isThemeRevealed,
-				rowId:2,
-			},*/
 		},
 	})
 }
@@ -92,6 +84,11 @@ func (factory *sessionDialogFactory) createVariants(trans i18n.TranslateFunc, se
 		}
 	}
 	return
+}
+
+func sendSpyfallLocation(sessionId int64, data *processing.ProcessData) bool {
+	staticFunctions.SendSpyfallLocation(data.Static, sessionId)
+	return true
 }
 
 func (factory *sessionDialogFactory) MakeDialog(userId int64, trans i18n.TranslateFunc, staticData *processing.StaticProccessStructs, customData interface{}) *dialog.Dialog {
