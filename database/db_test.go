@@ -218,7 +218,7 @@ func TestUserSession(t *testing.T) {
 		assert.Equal(int64(2), db.GetUsersCountInSession(sessionId))
 	}
 
-	db.DisconnectFromSession(userId1)
+	db.LeaveSession(userId1)
 	assert.True(db.DoesSessionExist(sessionId))
 
 	{
@@ -230,7 +230,7 @@ func TestUserSession(t *testing.T) {
 		assert.Equal(int64(1), db.GetUsersCountInSession(sessionId))
 	}
 
-	db.DisconnectFromSession(userId2)
+	db.LeaveSession(userId2)
 	assert.False(db.DoesSessionExist(sessionId))
 
 	{
@@ -257,4 +257,29 @@ func TestSessionMessageId(t *testing.T) {
 
 	db.SetSessionMessageId(userId1, sessionMessageId)
 	assert.Equal(sessionMessageId, db.GetSessionMessageId(userId1))
+}
+
+
+func TestGameTheme(t *testing.T) {
+	assert := require.New(t)
+	db := createDbAndConnect(t)
+	defer clearDb()
+	if db == nil {
+		t.Fail()
+		return
+	}
+	defer db.Disconnect()
+
+	userId1 := db.GetUserId(123, "")
+
+	testTheme := "testTheme"
+
+	assert.False(db.IsThemeRevealed(userId1))
+	db.SetUserTheme(userId1, testTheme)
+	assert.False(db.IsThemeRevealed(userId1))
+	db.SetThemeRevealed(userId1, true)
+	assert.True(db.IsThemeRevealed(userId1))
+	assert.Equal(testTheme, db.GetUserTheme(userId1))
+	db.SetThemeRevealed(userId1, false)
+	assert.False(db.IsThemeRevealed(userId1))
 }

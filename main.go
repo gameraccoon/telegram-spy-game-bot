@@ -94,6 +94,7 @@ func main() {
 	dialogManager.RegisterDialogFactory("lc", dialogFactories.MakeLanguageSelectDialogFactory())
 	dialogManager.RegisterDialogFactory("se", dialogFactories.MakeSessionDialogFactory())
 	dialogManager.RegisterDialogFactory("ns", dialogFactories.MakeNoSessionDialogFactory())
+	dialogManager.RegisterDialogFactory("th", dialogFactories.MakeThemeDialogFactory())
 	dialogManager.RegisterTextInputProcessorManager(dialogFactories.GetTextInputProcessorManager())
 
 	staticData := &processing.StaticProccessStructs{
@@ -101,8 +102,8 @@ func main() {
 		Db:     db,
 		Config: config,
 		Trans:  translators,
-		MakeDialogFn: func(id string, userId int64, trans i18n.TranslateFunc, staticData *processing.StaticProccessStructs) *dialog.Dialog {
-			return dialogManager.MakeDialog(id, userId, trans, staticData)
+		MakeDialogFn: func(id string, userId int64, trans i18n.TranslateFunc, staticData *processing.StaticProccessStructs, customData interface{}) *dialog.Dialog {
+			return dialogManager.MakeDialog(id, userId, trans, staticData, customData)
 		},
 		BotName: chat.GetBotUsername(),
 	}

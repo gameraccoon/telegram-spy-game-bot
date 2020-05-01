@@ -11,16 +11,6 @@ type ProcessorFunc func(*processing.ProcessData)
 
 type ProcessorFuncMap map[string]ProcessorFunc
 
-func sessionCommand(data *processing.ProcessData) {
-	_, isInSession := staticFunctions.GetDb(data.Static).GetUserSession(data.UserId)
-	if isInSession {
-		staticFunctions.SendSessionDialog(data)
-	} else {
-		data.SendDialog(data.Static.MakeDialogFn("ns", data.UserId, data.Trans, data.Static))
-	}
-	data.Static.SetUserStateTextProcessor(data.UserId, nil)
-}
-
 func startCommand(data *processing.ProcessData) {
 	if len(data.Message) > 0 {
 		isSuccessfull := staticFunctions.ConnectToSession(data, data.Message)
@@ -37,8 +27,18 @@ func startCommand(data *processing.ProcessData) {
 	data.Static.SetUserStateTextProcessor(data.UserId, nil)
 }
 
+func sessionCommand(data *processing.ProcessData) {
+	_, isInSession := staticFunctions.GetDb(data.Static).GetUserSession(data.UserId)
+	if isInSession {
+		staticFunctions.SendSessionDialog(data)
+	} else {
+		data.SendDialog(data.Static.MakeDialogFn("ns", data.UserId, data.Trans, data.Static, nil))
+	}
+	data.Static.SetUserStateTextProcessor(data.UserId, nil)
+}
+
 func settingsCommand(data *processing.ProcessData) {
-	data.SendDialog(data.Static.MakeDialogFn("us", data.UserId, data.Trans, data.Static))
+	data.SendDialog(data.Static.MakeDialogFn("us", data.UserId, data.Trans, data.Static, nil))
 }
 
 func helpCommand(data *processing.ProcessData) {
@@ -52,8 +52,8 @@ func cancelCommand(data *processing.ProcessData) {
 
 func makeUserCommandProcessors() ProcessorFuncMap {
 	return map[string]ProcessorFunc{
-		"session":  sessionCommand,
 		"start":    startCommand,
+		"session":  sessionCommand,
 		"settings": settingsCommand,
 		"help":     helpCommand,
 		"cancel":   cancelCommand,
@@ -113,6 +113,11 @@ func processPlainMessage(data *processing.ProcessData, dialogManager *dialogMana
 	success := dialogManager.ProcessText(data)
 
 	if !success {
-		data.SendMessage(data.Trans("help_info"))
+		sessionId, isInSession := staticFunctions.GetDb(data.Static).GetUserSession(data.UserId)
+		if isInSession {
+			staticFunctions.SendThemeToAll(data, sessionId, data.Message)
+		} else {
+			data.SendMessage(data.Trans("help_info"))
+		}
 	}
 }

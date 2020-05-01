@@ -52,7 +52,7 @@ func (factory *languageSelectDialogFactory) createVariants(staticData *processin
 	return
 }
 
-func (factory *languageSelectDialogFactory) MakeDialog(userId int64, trans i18n.TranslateFunc, staticData *processing.StaticProccessStructs) *dialog.Dialog {
+func (factory *languageSelectDialogFactory) MakeDialog(userId int64, trans i18n.TranslateFunc, staticData *processing.StaticProccessStructs, customData interface{}) *dialog.Dialog {
 	return &dialog.Dialog{
 		Text:     trans("select_language"),
 		Variants: factory.createVariants(staticData),

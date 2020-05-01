@@ -79,7 +79,7 @@ func FormatTimestamp(timestamp time.Time, timezone string) string {
 }
 
 func SendSessionDialog(data *processing.ProcessData) {
-	messageId := data.SendDialog(data.Static.MakeDialogFn("se", data.UserId, data.Trans, data.Static))
+	messageId := data.SendDialog(data.Static.MakeDialogFn("se", data.UserId, data.Trans, data.Static, nil))
 	GetDb(data.Static).SetSessionMessageId(data.UserId, messageId)
 }
 
@@ -89,7 +89,7 @@ func UpdateSessionDialogs(sessionId int64, staticData *processing.StaticProccess
 
 	for _, userId := range users {
 		trans := FindTransFunction(userId, staticData)
-		dialog := staticData.MakeDialogFn("se", userId, trans, staticData)
+		dialog := staticData.MakeDialogFn("se", userId, trans, staticData, nil)
 		chatId := db.GetChatId(userId)
 		messageId := db.GetSessionMessageId(userId)
 		staticData.Chat.SendDialog(chatId, dialog, messageId)

@@ -64,8 +64,8 @@ func disconnectSession(sessionId int64, data *processing.ProcessData) bool {
 		return true
 	}
 
-	_, wasInSession := db.DisconnectFromSession(data.UserId)
-	data.SubstitudeDialog(data.Static.MakeDialogFn("ns", data.UserId, data.Trans, data.Static))
+	_, wasInSession := db.LeaveSession(data.UserId)
+	data.SubstitudeDialog(data.Static.MakeDialogFn("ns", data.UserId, data.Trans, data.Static, nil))
 	if wasInSession {
 		staticFunctions.UpdateSessionDialogs(sessionId, data.Static)
 	}
@@ -94,7 +94,7 @@ func (factory *sessionDialogFactory) createVariants(trans i18n.TranslateFunc, se
 	return
 }
 
-func (factory *sessionDialogFactory) MakeDialog(userId int64, trans i18n.TranslateFunc, staticData *processing.StaticProccessStructs) *dialog.Dialog {
+func (factory *sessionDialogFactory) MakeDialog(userId int64, trans i18n.TranslateFunc, staticData *processing.StaticProccessStructs, customData interface{}) *dialog.Dialog {
 	db := staticFunctions.GetDb(staticData)
 
 	sessionId, _ := db.GetUserSession(userId)

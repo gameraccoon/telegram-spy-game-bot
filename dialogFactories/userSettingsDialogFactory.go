@@ -40,7 +40,7 @@ func MakeUserSettingsDialogFactory() dialogFactory.DialogFactory {
 }
 
 func changeLanguage(userId int64, data *processing.ProcessData) bool {
-	data.SubstitudeDialog(data.Static.MakeDialogFn("lc", data.UserId, data.Trans, data.Static))
+	data.SubstitudeDialog(data.Static.MakeDialogFn("lc", data.UserId, data.Trans, data.Static, nil))
 	return true
 }
 
@@ -59,7 +59,7 @@ func (factory *userSettingsDialogFactory) createVariants(settingsData *userSetti
 	return
 }
 
-func (factory *userSettingsDialogFactory) MakeDialog(userId int64, trans i18n.TranslateFunc, staticData *processing.StaticProccessStructs) *dialog.Dialog {
+func (factory *userSettingsDialogFactory) MakeDialog(userId int64, trans i18n.TranslateFunc, staticData *processing.StaticProccessStructs, customData interface{}) *dialog.Dialog {
 	settingsData := userSettingsData {
 		userId: userId,
 		staticData: staticData,

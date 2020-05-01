@@ -71,7 +71,7 @@ func (factory *noSessionDialogFactory) createVariants(trans i18n.TranslateFunc) 
 	return
 }
 
-func (factory *noSessionDialogFactory) MakeDialog(userId int64, trans i18n.TranslateFunc, staticData *processing.StaticProccessStructs) *dialog.Dialog {
+func (factory *noSessionDialogFactory) MakeDialog(userId int64, trans i18n.TranslateFunc, staticData *processing.StaticProccessStructs, customData interface{}) *dialog.Dialog {
 	return &dialog.Dialog{
 		Text:     trans("no_session_title"),
 		Variants: factory.createVariants(trans),

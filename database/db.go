@@ -45,9 +45,10 @@ func ConnectDb(path string) (database *SpyBotDb, err error) {
 		",language TEXT NOT NULL" +
 
 		// session related data
-		",is_ready INTEGER NOT NULL" +
 		",current_session INTEGER" +
 		",current_session_message INTEGER" +
+		",theme TEXT" +
+		",is_theme_revealed INTEGER" +
 		",FOREIGN KEY(current_session) REFERENCES sessions(id) ON DELETE SET NULL" +
 		")")
 
@@ -115,8 +116,8 @@ func (database *SpyBotDb) GetUserId(chatId int64, userLangCode string) (userId i
 	database.mutex.Lock()
 	defer database.mutex.Unlock()
 
-	database.db.Exec(fmt.Sprintf("INSERT OR IGNORE INTO users(chat_id, language, is_ready) "+
-		"VALUES (%d, '%s', 0)", chatId, userLangCode))
+	database.db.Exec(fmt.Sprintf("INSERT OR IGNORE INTO users(chat_id, language) "+
+		"VALUES (%d, '%s')", chatId, userLangCode))
 
 	rows, err := database.db.Query(fmt.Sprintf("SELECT id FROM users WHERE chat_id=%d", chatId))
 	if err != nil {
@@ -294,7 +295,7 @@ func (database *SpyBotDb) DoesSessionExist(sessionId int64) (isExists bool) {
 }
 
 func (database *SpyBotDb) CreateSession(userId int64) (sessionId int64, previousSessionId int64, wasInSession bool) {
-	previousSessionId, wasInSession = database.DisconnectFromSession(userId)
+	previousSessionId, wasInSession = database.LeaveSession(userId)
 
 	database.mutex.Lock()
 	defer database.mutex.Unlock()
@@ -313,7 +314,7 @@ func (database *SpyBotDb) ConnectToSession(userId int64, sessionId int64) (isSuc
 		return
 	}
 
-	previousSessionId, wasInSession = database.DisconnectFromSession(userId)
+	previousSessionId, wasInSession = database.LeaveSession(userId)
 
 	database.mutex.Lock()
 	defer database.mutex.Unlock()
@@ -371,7 +372,7 @@ func (database *SpyBotDb) GetUsersInSession(sessionId int64) (users []int64) {
 	return
 }
 
-func (database *SpyBotDb) DisconnectFromSession(userId int64) (sessionId int64, wasInSession bool) {
+func (database *SpyBotDb) LeaveSession(userId int64) (sessionId int64, wasInSession bool) {
 	sessionId, wasInSession = database.GetUserSession(userId)
 
 	if !wasInSession {
@@ -381,7 +382,7 @@ func (database *SpyBotDb) DisconnectFromSession(userId int64) (sessionId int64, 
 	database.mutex.Lock()
 	defer database.mutex.Unlock()
 
-	database.db.Exec(fmt.Sprintf("UPDATE OR ROLLBACK users SET current_session=NULL WHERE id=%d", userId))
+	database.db.Exec(fmt.Sprintf("UPDATE OR ROLLBACK users SET current_session=NULL, theme=NULL, is_theme_revealed=NULL WHERE id=%d", userId))
 
 	// delete session if it's empty
 	database.mutex.Unlock()
@@ -477,6 +478,69 @@ func (database *SpyBotDb) GetTokenFromSessionId(sessionId int64) (token string, 
 			log.Fatal(err)
 		}
 	}
+
+	return
+}
+
+func (database *SpyBotDb) SetUserTheme(userId int64, theme string) {
+	database.mutex.Lock()
+	defer database.mutex.Unlock()
+
+	database.db.Exec(fmt.Sprintf("UPDATE OR ROLLBACK users SET theme='%s' WHERE id=%d", dbBase.SanitizeString(theme), userId))
+
+	return
+}
+
+func (database *SpyBotDb) GetUserTheme(userId int64) (theme string) {
+	database.mutex.Lock()
+	defer database.mutex.Unlock()
+
+	rows, err := database.db.Query(fmt.Sprintf("SELECT theme FROM users WHERE id=%d AND theme IS NOT NULL", userId))
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	defer rows.Close()
+
+	if rows.Next() {
+		err := rows.Scan(&theme)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+	} else {
+		err = rows.Err()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	return
+}
+
+func (database *SpyBotDb) IsThemeRevealed(userId int64) (isRevealed bool) {
+	database.mutex.Lock()
+	defer database.mutex.Unlock()
+
+	rows, err := database.db.Query(fmt.Sprintf("SELECT 1 FROM users WHERE id=%d AND is_theme_revealed = 1 LIMIT 1", userId))
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	defer rows.Close()
+
+	isRevealed = rows.Next();
+
+	return
+}
+
+func (database *SpyBotDb) SetThemeRevealed(userId int64, isRevealed bool) {
+	database.mutex.Lock()
+	defer database.mutex.Unlock()
+
+	isRevealedInt := 0
+	if isRevealed {
+		isRevealedInt = 1
+	}
+
+	database.db.Exec(fmt.Sprintf("UPDATE OR ROLLBACK users SET is_theme_revealed=%d WHERE id=%d", isRevealedInt, userId))
 
 	return
 }
