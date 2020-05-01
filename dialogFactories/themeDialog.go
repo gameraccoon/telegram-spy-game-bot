@@ -85,14 +85,16 @@ func (factory *themeDialogFactory) MakeDialog(userId int64, trans i18n.Translate
 
 	isRevealed := db.IsThemeRevealed(userId)
 
-	message, ok := customData.(string)
+	theme, ok := customData.(string)
 	if !ok {
 		log.Print("message is not set for theme dialog")
 	}
 
 	var title string
 	if isRevealed {
-		title = message
+		title = trans("theme_title", map[string]interface{} {
+			"Theme": theme,
+		})
 	} else {
 		title = trans("theme_hidden")
 	}

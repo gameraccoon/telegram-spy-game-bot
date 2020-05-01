@@ -14,6 +14,7 @@
 	"create_session": { "other": "Create session" },
 	"share_link": { "other": "Share invite link" },
 	"disconnect_session": { "other": "Disconnect" },
+	"theme_title": { "other": "Theme:\n{{.Theme}}" },
 	"theme_hidden": { "other": "Theme is hidden" },
 	"show_theme": { "other": "Reveal" },
 	"hide_theme": { "other": "Hide" },
