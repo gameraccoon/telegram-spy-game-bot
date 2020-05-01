@@ -115,7 +115,7 @@ func processPlainMessage(data *processing.ProcessData, dialogManager *dialogMana
 	if !success {
 		sessionId, isInSession := staticFunctions.GetDb(data.Static).GetUserSession(data.UserId)
 		if isInSession {
-			staticFunctions.SendThemeToAll(data, sessionId, data.Message)
+			staticFunctions.SendThemeToOthers(data, sessionId, data.Message)
 		} else {
 			data.SendMessage(data.Trans("help_info"))
 		}
