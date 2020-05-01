@@ -4,6 +4,7 @@
 	"help_info": { "other": "You can use this bot to play games like Spyfall with your friends. Just create a session, share the invitation link and send the topic. All the users except one will receive it, this one user will receive 'You are the Spy' message." },
 	"session_title": { "other": "You are in a session.\nParticipants: {{.Participants}}" },
 	"no_session_title": { "other": "You're not in a session" },
+	"no_session_error": { "other": "You're not in a session. Create one or ask for a link to an existent session" },
 	"user_settings_title": { "other": "Settings\n<b>Language</b>: {{.Lang}}" },
 	"change_language": { "other": "Change Language" },
 	"command_canceled": { "other": "If there was some action I canceled it" },

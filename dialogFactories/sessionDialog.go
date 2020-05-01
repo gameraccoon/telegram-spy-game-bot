@@ -87,7 +87,7 @@ func (factory *sessionDialogFactory) createVariants(trans i18n.TranslateFunc, se
 }
 
 func sendSpyfallLocation(sessionId int64, data *processing.ProcessData) bool {
-	staticFunctions.SendSpyfallLocation(data.Static, sessionId)
+	staticFunctions.SendSpyfallLocationToAll(data.Static, sessionId)
 	return true
 }
 

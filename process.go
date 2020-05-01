@@ -41,6 +41,19 @@ func settingsCommand(data *processing.ProcessData) {
 	data.SendDialog(data.Static.MakeDialogFn("us", data.UserId, data.Trans, data.Static, nil))
 }
 
+func sendSpyfallLocation(data *processing.ProcessData) {
+	sessionId, isInSession := staticFunctions.GetDb(data.Static).GetUserSession(data.UserId)
+	if isInSession {
+		staticFunctions.SendSpyfallLocationToAll(data.Static, sessionId)
+	} else {
+		data.SendMessage(data.Trans("no_session_error"))
+	}
+}
+
+func listOfSpyfallLocations(data *processing.ProcessData) {
+	staticFunctions.SendSpyfallLocationsList(data)
+}
+
 func helpCommand(data *processing.ProcessData) {
 	data.SendMessage(data.Trans("help_info"))
 }
@@ -52,11 +65,13 @@ func cancelCommand(data *processing.ProcessData) {
 
 func makeUserCommandProcessors() ProcessorFuncMap {
 	return map[string]ProcessorFunc{
-		"start":    startCommand,
-		"session":  sessionCommand,
-		"settings": settingsCommand,
-		"help":     helpCommand,
-		"cancel":   cancelCommand,
+		"start":        startCommand,
+		"session":      sessionCommand,
+		"settings":     settingsCommand,
+		"spyfall_send": sendSpyfallLocation,
+		"spyfall_list": listOfSpyfallLocations,
+		"help":         helpCommand,
+		"cancel":       cancelCommand,
 	}
 }
 

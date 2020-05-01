@@ -5,6 +5,7 @@ import (
 	static "github.com/gameraccoon/telegram-spy-game-bot/staticData"
 	"log"
 	"math/rand"
+	"strings"
 )
 
 func SendThemeToPlayers(staticData *processing.StaticProccessStructs, userIds []int64, theme string) {
@@ -39,7 +40,7 @@ func SendThemeToOthers(data *processing.ProcessData, sessionId int64, theme stri
 	data.SendMessage(data.Trans("theme_sent"))
 }
 
-func SendSpyfallLocation(staticData *processing.StaticProccessStructs, sessionId int64) {
+func SendSpyfallLocationToAll(staticData *processing.StaticProccessStructs, sessionId int64) {
 	db := GetDb(staticData)
 
 	config, configCastSuccess := staticData.Config.(static.StaticConfiguration)
@@ -76,4 +77,20 @@ func SendSpyfallLocation(staticData *processing.StaticProccessStructs, sessionId
 		chatId := db.GetChatId(userId)
 		staticData.Chat.SendDialog(chatId, staticData.MakeDialogFn("th", userId, trans, staticData, theme), 0)
 	}
+}
+
+func SendSpyfallLocationsList(data *processing.ProcessData) {
+	config, configCastSuccess := data.Static.Config.(static.StaticConfiguration)
+
+	if !configCastSuccess {
+		log.Print("Config type is incorrect")
+		return
+	}
+
+	themesList := []string{}
+	for _, location := range config.SpyfallLocations {
+		themesList = append(themesList, data.Trans("spyfall_loc_" + location.LocationId))
+	}
+
+	data.SendMessage(strings.Join(themesList[:], "\n"))
 }
