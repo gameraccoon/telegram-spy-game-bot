@@ -6,6 +6,7 @@ import (
 	static "github.com/gameraccoon/telegram-spy-game-bot/staticData"
 	"github.com/nicksnyder/go-i18n/i18n"
 	"log"
+	"strings"
 	"time"
 )
 
@@ -24,6 +25,15 @@ func GetDb(staticData *processing.StaticProccessStructs) *database.SpyBotDb {
 	}
 }
 
+func getClosestLang(config *static.StaticConfiguration, lang string) string {
+	for _, langCode := range config.AvailableLanguages {
+		if strings.HasPrefix(langCode.Key, lang) {
+			return langCode.Key
+		}
+	}
+	return lang
+}
+
 func FindTransFunction(userId int64, staticData *processing.StaticProccessStructs) i18n.TranslateFunc {
 	// ToDo: cache user's lang
 	lang := GetDb(staticData).GetUserLanguage(userId)
@@ -38,12 +48,17 @@ func FindTransFunction(userId int64, staticData *processing.StaticProccessStruct
 	if len(lang) <= 0 {
 		log.Printf("User %d has empty language. Setting to default.", userId)
 		lang = config.DefaultLanguage
-		GetDb(staticData).SetUserLanguage(userId, lang)
 	}
 
 	if foundTrans, ok := staticData.Trans[lang]; ok {
+		GetDb(staticData).SetUserLanguage(userId, lang)
 		return foundTrans
 	}
+
+	if foundTrans, ok := staticData.Trans[getClosestLang(&config, lang)]; ok {
+		GetDb(staticData).SetUserLanguage(userId, lang)
+		return foundTrans
+	}	
 
 	// unknown language, use default instead
 	if foundTrans, ok := staticData.Trans[config.DefaultLanguage]; ok {

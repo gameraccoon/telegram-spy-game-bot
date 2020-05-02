@@ -21,6 +21,7 @@
 	"hide_theme": { "other": "Hide" },
 	"theme_sent": { "other": "Theme has been successfully sent to other players" },
 	"theme_spy": { "other": "You are the Spy" },
+	"language_changed": { "other": "New language applied" },
 
 	"spyfall_theme": { "other": "Location: {{.Location}}\nRole: {{.Role}}" },
 	"spyfall_theme_spy": { "other": "Location: Unknown\nYou are the Spy" },
@@ -108,7 +109,7 @@
 	"spyfall_role_dayspa_beatician": { "other": "Beatician" },
 
 	"spyfall_loc_embassy": { "other": "Embassy" },
-	"spyfall_role_embassy_sequrityguard": { "other": "Sequrity guard" },
+	"spyfall_role_embassy_sequrityguard": { "other": "Seсurity guard" },
 	"spyfall_role_embassy_adminassistant": { "other": "Admin assistant" },
 	"spyfall_role_embassy_ambassador": { "other": "Ambassador" },
 	"spyfall_role_embassy_governmentofficial": { "other": "Government official" },
