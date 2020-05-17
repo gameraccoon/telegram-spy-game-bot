@@ -16,7 +16,7 @@
 	"share_link": { "other": "Share invite link" },
 	"disconnect_session": { "other": "Disconnect" },
 	"theme_title": { "other": "<b>Theme</b>\n{{.Theme}}" },
-	"theme_hidden": { "other": "Theme is hidden" },
+	"theme_hidden": { "other": "Theme is hidden (Press \"Reveal\")" },
 	"show_theme": { "other": "Reveal" },
 	"hide_theme": { "other": "Hide" },
 	"theme_sent": { "other": "Theme has been successfully sent to other players" },
