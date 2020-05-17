@@ -12,6 +12,7 @@
 	"send_session_id": { "other": "Send token of the session you want to join" },
 	"session_is_too_old": { "other": "This session message is too old.\nUse /session command to see the latest session info" },
 	"session_not_found_try_again": { "other": "A session with such an id is not found. Check the token correctness and try again" },
+	"few_players": { "other": "Too few players to send the theme" },
 	"create_session": { "other": "Create session" },
 	"share_link": { "other": "Share invite link" },
 	"disconnect_session": { "other": "Disconnect" },

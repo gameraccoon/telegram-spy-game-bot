@@ -8,13 +8,18 @@ import (
 	"strings"
 )
 
-func SendThemeToPlayers(staticData *processing.StaticProccessStructs, userIds []int64, theme string) {
-	db := GetDb(staticData)
+func SendThemeToPlayers(data *processing.ProcessData, userIds []int64, theme string) (success bool) {
+	db := GetDb(data.Static)
+
+	if len(userIds) < 2 {
+		data.SendMessage(data.Trans("few_players"))
+		return false
+	}
 
 	spyIdx := rand.Intn(len(userIds))
 
 	for i, userId := range userIds {
-		trans := FindTransFunction(userId, staticData)
+		trans := FindTransFunction(userId, data.Static)
 
 		sentTheme := theme
 		if i == spyIdx {
@@ -24,8 +29,9 @@ func SendThemeToPlayers(staticData *processing.StaticProccessStructs, userIds []
 		db.SetThemeRevealed(userId, false)
 		db.SetUserTheme(userId, sentTheme)
 		chatId := db.GetChatId(userId)
-		staticData.Chat.SendDialog(chatId, staticData.MakeDialogFn("th", userId, trans, staticData, sentTheme), 0)
+		data.Static.Chat.SendDialog(chatId, data.Static.MakeDialogFn("th", userId, trans, data.Static, sentTheme), 0)
 	}
+	return true
 }
 
 func SendThemeToOthers(data *processing.ProcessData, sessionId int64, theme string) {
@@ -36,18 +42,22 @@ func SendThemeToOthers(data *processing.ProcessData, sessionId int64, theme stri
 			playersExceptCurrent = append(playersExceptCurrent, userId)
 		}
 	}
-	SendThemeToPlayers(data.Static, playersExceptCurrent, theme)
-	data.SendMessage(data.Trans("theme_sent"))
+
+	success := SendThemeToPlayers(data, playersExceptCurrent, theme)
+
+	if success {
+		data.SendMessage(data.Trans("theme_sent"))
+	}
 }
 
-func SendSpyfallLocationToAll(staticData *processing.StaticProccessStructs, sessionId int64) {
-	db := GetDb(staticData)
+func SendSpyfallLocationToAll(data *processing.ProcessData, sessionId int64) (success bool) {
+	db := GetDb(data.Static)
 
-	config, configCastSuccess := staticData.Config.(static.StaticConfiguration)
+	config, configCastSuccess := data.Static.Config.(static.StaticConfiguration)
 
 	if !configCastSuccess {
 		log.Print("Config type is incorrect")
-		return
+		return false
 	}
 
 	locationIdx := rand.Intn(len(config.SpyfallLocations))
@@ -55,11 +65,17 @@ func SendSpyfallLocationToAll(staticData *processing.StaticProccessStructs, sess
 	rand.Shuffle(len(locationInfoCopy.Roles), func(i, j int) { locationInfoCopy.Roles[i], locationInfoCopy.Roles[j] = locationInfoCopy.Roles[j], locationInfoCopy.Roles[i] })
 
 	userIds := db.GetUsersInSession(sessionId)
+
+	if len(userIds) < 2 {
+		data.SendMessage(data.Trans("few_players"))
+		return false
+	}
+
 	spyIdx := rand.Intn(len(userIds))
 
 	roleIdx := 0
 	for i, userId := range userIds {
-		trans := FindTransFunction(userId, staticData)
+		trans := FindTransFunction(userId, data.Static)
 
 		var theme string
 		if i == spyIdx {
@@ -75,8 +91,9 @@ func SendSpyfallLocationToAll(staticData *processing.StaticProccessStructs, sess
 		db.SetThemeRevealed(userId, false)
 		db.SetUserTheme(userId, theme)
 		chatId := db.GetChatId(userId)
-		staticData.Chat.SendDialog(chatId, staticData.MakeDialogFn("th", userId, trans, staticData, theme), 0)
+		data.Static.Chat.SendDialog(chatId, data.Static.MakeDialogFn("th", userId, trans, data.Static, theme), 0)
 	}
+	return true
 }
 
 func SendSpyfallLocationsList(data *processing.ProcessData) {

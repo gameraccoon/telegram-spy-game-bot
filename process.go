@@ -44,7 +44,7 @@ func settingsCommand(data *processing.ProcessData) {
 func sendSpyfallLocation(data *processing.ProcessData) {
 	sessionId, isInSession := staticFunctions.GetDb(data.Static).GetUserSession(data.UserId)
 	if isInSession {
-		staticFunctions.SendSpyfallLocationToAll(data.Static, sessionId)
+		staticFunctions.SendSpyfallLocationToAll(data, sessionId)
 	} else {
 		data.SendMessage(data.Trans("no_session_error"))
 	}
