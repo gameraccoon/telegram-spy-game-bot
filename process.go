@@ -54,6 +54,15 @@ func listOfSpyfallLocations(data *processing.ProcessData) {
 	staticFunctions.SendSpyfallLocationsList(data)
 }
 
+func sendNumbersToPlayers(data *processing.ProcessData) {
+	sessionId, isInSession := staticFunctions.GetDb(data.Static).GetUserSession(data.UserId)
+	if isInSession {
+		staticFunctions.GiveRandomNumbersToPlayers(data, sessionId)
+	} else {
+		data.SendMessage(data.Trans("no_session_error"))
+	}
+}
+
 func helpCommand(data *processing.ProcessData) {
 	data.SendMessage(data.Trans("help_info"))
 }
@@ -72,6 +81,7 @@ func makeUserCommandProcessors() ProcessorFuncMap {
 		"spyfall_list": listOfSpyfallLocations,
 		"help":         helpCommand,
 		"cancel":       cancelCommand,
+		"number":       sendNumbersToPlayers,
 	}
 }
 

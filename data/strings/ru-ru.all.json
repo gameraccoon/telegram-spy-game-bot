@@ -24,6 +24,8 @@
 	"theme_spy": { "other": "Вы - шпион" },
 	"language_changed": { "other": "Новый язык успешно применен" },
 
+	"player_number_msg": { "other": "Вы №{{.Number}}" },
+
 	"spyfall_theme": { "other": "Место: {{.Location}}\nРоль: {{.Role}}" },
 	"spyfall_theme_spy": { "other": "Место: Неизвестно\nВы - шпион" },
 	"send_spyfall_location": { "other": "Отправить локацию" },

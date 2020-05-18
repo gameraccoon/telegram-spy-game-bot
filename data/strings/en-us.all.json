@@ -24,6 +24,8 @@
 	"theme_spy": { "other": "You are the Spy" },
 	"language_changed": { "other": "New language applied" },
 
+	"player_number_msg": { "other": "You are #{{.Number}}" },
+
 	"spyfall_theme": { "other": "Location: {{.Location}}\nRole: {{.Role}}" },
 	"spyfall_theme_spy": { "other": "Location: Unknown\nYou are the Spy" },
 	"send_spyfall_location": { "other": "Send Spyfall location" },
