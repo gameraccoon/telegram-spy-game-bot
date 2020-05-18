@@ -26,7 +26,7 @@ func ConnectDb(path string) (database *SpyBotDb, err error) {
 		return
 	}
 
-	database.db.Exec("PRAGMA foreign_keys = ON")
+	// database.db.Exec("PRAGMA foreign_keys = ON")
 
 	database.db.Exec("CREATE TABLE IF NOT EXISTS" +
 		" global_vars(name TEXT PRIMARY KEY" +
@@ -49,7 +49,7 @@ func ConnectDb(path string) (database *SpyBotDb, err error) {
 		",current_session_message INTEGER" +
 		",theme TEXT" +
 		",is_theme_revealed INTEGER" +
-		",FOREIGN KEY(current_session) REFERENCES sessions(id) ON DELETE SET NULL" +
+		// ",FOREIGN KEY(current_session) REFERENCES sessions(id) ON DELETE SET NULL" +
 		")")
 
 	database.db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS" +
