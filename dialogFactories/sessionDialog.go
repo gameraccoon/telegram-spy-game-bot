@@ -52,7 +52,7 @@ func disconnectSession(sessionId int64, data *processing.ProcessData) bool {
 	currentSessionId, isInSession := db.GetUserSession(data.UserId)
 
 	if !isInSession || sessionId != currentSessionId {
-		data.SendMessage(data.Trans("session_is_too_old"))
+		data.SendMessage(data.Trans("session_is_too_old"), true)
 		return true
 	}
 

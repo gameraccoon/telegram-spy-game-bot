@@ -18,9 +18,9 @@ func startCommand(data *processing.ProcessData) {
 			return
 		}
 
-		data.SendMessage(data.Trans("link_session_is_old"))
+		data.SendMessage(data.Trans("link_session_is_old"), true)
 	} else {
-		data.SendMessage(data.Trans("start_message"))
+		data.SendMessage(data.Trans("start_message"), true)
 	}
 
 	sessionCommand(data)
@@ -46,7 +46,7 @@ func sendSpyfallLocation(data *processing.ProcessData) {
 	if isInSession {
 		staticFunctions.SendSpyfallLocationToAll(data, sessionId)
 	} else {
-		data.SendMessage(data.Trans("no_session_error"))
+		data.SendMessage(data.Trans("no_session_error"), true)
 	}
 }
 
@@ -59,17 +59,17 @@ func sendNumbersToPlayers(data *processing.ProcessData) {
 	if isInSession {
 		staticFunctions.GiveRandomNumbersToPlayers(data, sessionId)
 	} else {
-		data.SendMessage(data.Trans("no_session_error"))
+		data.SendMessage(data.Trans("no_session_error"), true)
 	}
 }
 
 func helpCommand(data *processing.ProcessData) {
-	data.SendMessage(data.Trans("help_info"))
+	data.SendMessage(data.Trans("help_info"), true)
 }
 
 func cancelCommand(data *processing.ProcessData) {
 	data.Static.SetUserStateTextProcessor(data.UserId, nil)
-	data.SendMessage(data.Trans("command_canceled"))
+	data.SendMessage(data.Trans("command_canceled"), true)
 }
 
 func makeUserCommandProcessors() ProcessorFuncMap {
@@ -128,7 +128,7 @@ func processCommand(data *processing.ProcessData, dialogManager *dialogManager.D
 	}
 
 	// if we here that means that no command was processed
-	data.SendMessage(data.Trans("help_info"))
+	data.SendMessage(data.Trans("help_info"), true)
 	return false
 }
 
@@ -142,7 +142,7 @@ func processPlainMessage(data *processing.ProcessData, dialogManager *dialogMana
 		if isInSession {
 			staticFunctions.SendThemeToOthers(data, sessionId, data.Message)
 		} else {
-			data.SendMessage(data.Trans("help_info"))
+			data.SendMessage(data.Trans("help_info"), true)
 		}
 	}
 }

@@ -12,7 +12,7 @@ func SendThemeToPlayers(data *processing.ProcessData, userIds []int64, theme str
 	db := GetDb(data.Static)
 
 	if len(userIds) < 2 {
-		data.SendMessage(data.Trans("few_players"))
+		data.SendMessage(data.Trans("few_players"), true)
 		return false
 	}
 
@@ -46,7 +46,7 @@ func SendThemeToOthers(data *processing.ProcessData, sessionId int64, theme stri
 	success := SendThemeToPlayers(data, playersExceptCurrent, theme)
 
 	if success {
-		data.SendMessage(data.Trans("theme_sent"))
+		data.SendMessage(data.Trans("theme_sent"), true)
 	}
 }
 
@@ -67,7 +67,7 @@ func SendSpyfallLocationToAll(data *processing.ProcessData, sessionId int64) (su
 	userIds := db.GetUsersInSession(sessionId)
 
 	if len(userIds) < 2 {
-		data.SendMessage(data.Trans("few_players"))
+		data.SendMessage(data.Trans("few_players"), true)
 		return false
 	}
 
@@ -109,7 +109,7 @@ func SendSpyfallLocationsList(data *processing.ProcessData) {
 		themesList = append(themesList, data.Trans("spyfall_loc_" + location.LocationId))
 	}
 
-	data.SendMessage(strings.Join(themesList[:], "\n"))
+	data.SendMessage(strings.Join(themesList[:], "\n"), true)
 }
 
 func GiveRandomNumbersToPlayers(data *processing.ProcessData, sessionId int64) {
@@ -118,7 +118,7 @@ func GiveRandomNumbersToPlayers(data *processing.ProcessData, sessionId int64) {
 	userIds := db.GetUsersInSession(sessionId)
 
 	if len(userIds) < 2 {
-		data.SendMessage(data.Trans("few_players"))
+		data.SendMessage(data.Trans("few_players"), true)
 		return
 	}
 
@@ -130,7 +130,7 @@ func GiveRandomNumbersToPlayers(data *processing.ProcessData, sessionId int64) {
 		})
 
 		chatId := db.GetChatId(userId)
-		data.Static.Chat.SendMessage(chatId, theme, 0)
+		data.Static.Chat.SendMessage(chatId, theme, 0, true)
 	}
 	return
 }

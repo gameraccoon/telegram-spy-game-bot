@@ -43,7 +43,7 @@ func connectToSession(data *processing.ProcessData) bool {
 	data.Static.SetUserStateTextProcessor(data.UserId, &processing.AwaitingTextProcessorData{
 		ProcessorId: "connectSession",
 	})
-	data.SendMessage(data.Trans("send_session_id"))
+	data.SendMessage(data.Trans("send_session_id"), true)
 	return true
 }
 

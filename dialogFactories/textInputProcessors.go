@@ -23,6 +23,6 @@ func processConnectSession(additionalId int64, data *processing.ProcessData) boo
 	data.Static.SetUserStateTextProcessor(data.UserId, &processing.AwaitingTextProcessorData{
 		ProcessorId: "connectSession",
 	})
-	data.SendMessage(data.Trans("session_not_found_try_again"))
+	data.SendMessage(data.Trans("session_not_found_try_again"), true)
 	return true
 }
