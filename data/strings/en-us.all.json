@@ -1,7 +1,7 @@
 {
-	"start_message": { "other": "You can use this bot to play games like Spyfall with your friends. Just create a session, share the invitation link, and send the topic. All the users except one will receive it, this one user will receive the 'You are the Spy' message." },
+	"start_message": { "other": "You can use this bot to play games like Spyfall with your friends. Just create a session, share the invitation link, and send the theme. All the users except one will receive it, this one user will receive the 'You are the Spy' message." },
 	"select_language": { "other": "Select your preferred language" },
-	"help_info": { "other": "You can use this bot to play games like Spyfall with your friends. Just create a session, share the invitation link, and send the topic. All the users except one will receive it, this one user will receive the 'You are the Spy' message." },
+	"help_info": { "other": "You can use this bot to play games like Spyfall with your friends. Just create a session, share the invitation link, and send the theme. All the users except one will receive it, this one user will receive the 'You are the Spy' message." },
 	"session_title": { "other": "You are in a session.\nParticipants: {{.Participants}}" },
 	"no_session_title": { "other": "You're not in a session" },
 	"no_session_error": { "other": "You're not in a session. Create one or ask for a link to an existent session" },
@@ -23,6 +23,7 @@
 	"theme_sent": { "other": "Theme has been successfully sent to other players" },
 	"theme_spy": { "other": "You are the Spy" },
 	"language_changed": { "other": "New language applied" },
+	"spoiler_terminator" : { "other": "Reopen the chat to hide the message" },
 
 	"player_number_msg": { "other": "You are #{{.Number}}" },
 

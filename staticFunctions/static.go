@@ -103,15 +103,19 @@ func UpdateSessionDialogs(sessionId int64, staticData *processing.StaticProccess
 	db := GetDb(staticData)
 
 	for _, userId := range users {
-		trans := FindTransFunction(userId, staticData)
-		dialog := staticData.MakeDialogFn("se", userId, trans, staticData, nil)
-		chatId := db.GetChatId(userId)
-		messageId := db.GetSessionMessageId(userId)
-		staticData.Chat.SendDialog(chatId, dialog, messageId)
+		chatId, isFound := db.GetTelegramUserChatId(userId)
+		if isFound {
+			trans := FindTransFunction(userId, staticData)
+			dialog := staticData.MakeDialogFn("se", userId, trans, staticData, nil)
+			messageId, isFound := db.GetSessionMessageId(userId)
+			if isFound {
+				staticData.Chat.SendDialog(chatId, dialog, messageId)
+			}
+		}
 	}
 }
 
-func ConnectToSession(data *processing.ProcessData, token string) (successfull bool) {
+func ConnectToSession(data *processing.ProcessData, token string) (successful bool) {
 	db := GetDb(data.Static)
 	sessionId, isFound := db.GetSessionIdFromToken(token)
 	if !isFound {

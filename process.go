@@ -13,8 +13,8 @@ type ProcessorFuncMap map[string]ProcessorFunc
 
 func startCommand(data *processing.ProcessData) {
 	if len(data.Message) > 0 {
-		isSuccessfull := staticFunctions.ConnectToSession(data, data.Message)
-		if isSuccessfull {
+		isSuccessful := staticFunctions.ConnectToSession(data, data.Message)
+		if isSuccessful {
 			return
 		}
 
@@ -44,7 +44,11 @@ func settingsCommand(data *processing.ProcessData) {
 func sendSpyfallLocation(data *processing.ProcessData) {
 	sessionId, isInSession := staticFunctions.GetDb(data.Static).GetUserSession(data.UserId)
 	if isInSession {
-		staticFunctions.SendSpyfallLocationToAll(data, sessionId)
+		isSuccess := staticFunctions.SendSpyfallLocationToAll(data.Static, sessionId)
+		if !isSuccess {
+			trans := staticFunctions.FindTransFunction(data.UserId, data.Static)
+			data.SendMessage(trans("few_players"), true)
+		}
 	} else {
 		data.SendMessage(data.Trans("no_session_error"), true)
 	}
@@ -57,7 +61,7 @@ func listOfSpyfallLocations(data *processing.ProcessData) {
 func sendNumbersToPlayers(data *processing.ProcessData) {
 	sessionId, isInSession := staticFunctions.GetDb(data.Static).GetUserSession(data.UserId)
 	if isInSession {
-		staticFunctions.GiveRandomNumbersToPlayers(data, sessionId)
+		staticFunctions.GiveRandomNumbersToPlayers(data.Static, sessionId)
 	} else {
 		data.SendMessage(data.Trans("no_session_error"), true)
 	}
@@ -95,7 +99,7 @@ func processCommandByProcessors(data *processing.ProcessData, processors *Proces
 }
 
 func UpdateProcessData(data *processing.ProcessData) {
-	userId := staticFunctions.GetDb(data.Static).GetUserId(data.ChatId, data.UserSystemLang)
+	userId := staticFunctions.GetDb(data.Static).GetOrCreateTelegramUserId(data.ChatId, data.UserSystemLang)
 	data.UserId = userId
 	data.Trans = staticFunctions.FindTransFunction(userId, data.Static)
 }
@@ -140,7 +144,13 @@ func processPlainMessage(data *processing.ProcessData, dialogManager *dialogMana
 	if !success {
 		sessionId, isInSession := staticFunctions.GetDb(data.Static).GetUserSession(data.UserId)
 		if isInSession {
-			staticFunctions.SendThemeToOthers(data, sessionId, data.Message)
+			isSuccess := staticFunctions.SendThemeToOthers(data.Static, sessionId, data.UserId, data.Message)
+			trans := staticFunctions.FindTransFunction(data.UserId, data.Static)
+			if isSuccess {
+				data.SendMessage(trans("theme_sent"), true)
+			} else {
+				data.SendMessage(trans("few_players"), true)
+			}
 		} else {
 			data.SendMessage(data.Trans("help_info"), true)
 		}

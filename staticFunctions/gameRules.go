@@ -3,64 +3,71 @@ package staticFunctions
 import (
 	"github.com/gameraccoon/telegram-bot-skeleton/processing"
 	static "github.com/gameraccoon/telegram-spy-game-bot/staticData"
+	"github.com/nicksnyder/go-i18n/i18n"
 	"log"
 	"math/rand"
 	"strings"
 )
 
-func SendThemeToPlayers(data *processing.ProcessData, userIds []int64, theme string) (success bool) {
-	db := GetDb(data.Static)
+func SendThemeToPlayers(staticData *processing.StaticProccessStructs, userIds []int64, theme string) (success bool) {
+	db := GetDb(staticData)
 
 	if len(userIds) < 2 {
-		data.SendMessage(data.Trans("few_players"), true)
 		return false
 	}
 
 	spyIdx := rand.Intn(len(userIds))
 
 	for i, userId := range userIds {
-		trans := FindTransFunction(userId, data.Static)
+		trans := FindTransFunction(userId, staticData)
 
-		sentTheme := theme
+		var themeMessage string
 		if i == spyIdx {
-			sentTheme = trans("theme_spy")
+			themeMessage = "<tg-spoiler>" + trans("theme_spy") + "</tg-spoiler>"
+		} else {
+			themeMessage = theme
 		}
 
-		db.SetThemeRevealed(userId, false)
-		db.SetUserTheme(userId, sentTheme)
-		chatId := db.GetChatId(userId)
-		data.Static.Chat.SendDialog(chatId, data.Static.MakeDialogFn("th", userId, trans, data.Static, sentTheme), 0)
+		chatId, isFound := db.GetTelegramUserChatId(userId)
+		if isFound {
+			staticData.Chat.SendMessage(chatId, wrapIntoTelegramSpoiler(themeMessage, trans), 0, true)
+		} else {
+			db.AddWebMessage(userId, themeMessage, 10)
+		}
 	}
 	return true
 }
 
-func SendThemeToOthers(data *processing.ProcessData, sessionId int64, theme string) {
-	playersInSession := GetDb(data.Static).GetUsersInSession(sessionId)
-	playersExceptCurrent := []int64{}
+func SendThemeToOthers(staticData *processing.StaticProccessStructs, sessionId int64, excludeUserId int64, theme string) (success bool) {
+	playersInSession := GetDb(staticData).GetUsersInSession(sessionId)
+	var playersExceptCurrent []int64
 	for _, userId := range playersInSession {
-		if userId != data.UserId {
+		if userId != excludeUserId {
 			playersExceptCurrent = append(playersExceptCurrent, userId)
 		}
 	}
 
-	success := SendThemeToPlayers(data, playersExceptCurrent, theme)
-
-	if success {
-		data.SendMessage(data.Trans("theme_sent"), true)
-	}
+	return SendThemeToPlayers(staticData, playersExceptCurrent, theme)
 }
 
-func SendSpyfallLocationToAll(data *processing.ProcessData, sessionId int64) (success bool) {
-	db := GetDb(data.Static)
+func SendSpyfallLocationToAll(staticData *processing.StaticProccessStructs, sessionId int64) (success bool) {
+	db := GetDb(staticData)
 
-	config, configCastSuccess := data.Static.Config.(static.StaticConfiguration)
+	config, configCastSuccess := staticData.Config.(static.StaticConfiguration)
 
 	if !configCastSuccess {
 		log.Print("Config type is incorrect")
 		return false
 	}
 
-	locationIdx := rand.Intn(len(config.SpyfallLocations))
+	locationsCount := len(config.SpyfallLocations)
+
+	if locationsCount == 0 {
+		log.Print("No locations found")
+		return false
+	}
+
+	locationIdx := rand.Intn(locationsCount)
 	locationInfoCopy := config.SpyfallLocations[locationIdx]
 	rand.Shuffle(len(locationInfoCopy.Roles), func(i, j int) {
 		locationInfoCopy.Roles[i], locationInfoCopy.Roles[j] = locationInfoCopy.Roles[j], locationInfoCopy.Roles[i]
@@ -69,7 +76,6 @@ func SendSpyfallLocationToAll(data *processing.ProcessData, sessionId int64) (su
 	userIds := db.GetUsersInSession(sessionId)
 
 	if len(userIds) < 2 {
-		data.SendMessage(data.Trans("few_players"), true)
 		return false
 	}
 
@@ -77,7 +83,7 @@ func SendSpyfallLocationToAll(data *processing.ProcessData, sessionId int64) (su
 
 	roleIdx := 0
 	for i, userId := range userIds {
-		trans := FindTransFunction(userId, data.Static)
+		trans := FindTransFunction(userId, staticData)
 
 		var theme string
 		if i == spyIdx {
@@ -90,12 +96,39 @@ func SendSpyfallLocationToAll(data *processing.ProcessData, sessionId int64) (su
 			roleIdx += 1
 		}
 
-		db.SetThemeRevealed(userId, false)
-		db.SetUserTheme(userId, theme)
-		chatId := db.GetChatId(userId)
-		data.Static.Chat.SendDialog(chatId, data.Static.MakeDialogFn("th", userId, trans, data.Static, theme), 0)
+		chatId, isFound := db.GetTelegramUserChatId(userId)
+		if isFound {
+			staticData.Chat.SendMessage(chatId, wrapIntoTelegramSpoiler(theme, trans), 0, true)
+		} else {
+			db.AddWebMessage(userId, theme, 10)
+		}
 	}
 	return true
+}
+
+func wrapIntoTelegramSpoiler(text string, trans i18n.TranslateFunc) string {
+	// since Telegram spoiler tag shows length, add spaces at the end of each line to obfuscate it
+	var finalText string
+	const maxLineLength = 40
+	for {
+		separatorPos := strings.Index(text, "\n")
+		if separatorPos == -1 {
+			finalText += text + "\n"
+			break
+		}
+
+		// skip long lines
+		if separatorPos > maxLineLength {
+			finalText += text[separatorPos+1:]
+			text = text[separatorPos+1:]
+			continue
+		}
+
+		finalText += text[:separatorPos] + strings.Repeat(" ", maxLineLength-len(text[:separatorPos])) + "\n"
+		text = text[separatorPos+1:]
+	}
+	// add an extra static line, since spaces from the last line are cut off
+	return "<tg-spoiler>" + finalText + "<i>" + trans("spoiler_terminator") + "</i>" + "</tg-spoiler>"
 }
 
 func SendSpyfallLocationsList(data *processing.ProcessData) {
@@ -106,7 +139,7 @@ func SendSpyfallLocationsList(data *processing.ProcessData) {
 		return
 	}
 
-	themesList := []string{}
+	var themesList []string
 	for _, location := range config.SpyfallLocations {
 		themesList = append(themesList, data.Trans("spyfall_loc_"+location.LocationId))
 	}
@@ -114,25 +147,28 @@ func SendSpyfallLocationsList(data *processing.ProcessData) {
 	data.SendMessage(strings.Join(themesList[:], "\n"), true)
 }
 
-func GiveRandomNumbersToPlayers(data *processing.ProcessData, sessionId int64) {
-	db := GetDb(data.Static)
+func GiveRandomNumbersToPlayers(staticData *processing.StaticProccessStructs, sessionId int64) {
+	db := GetDb(staticData)
 
 	userIds := db.GetUsersInSession(sessionId)
 
 	if len(userIds) < 2 {
-		data.SendMessage(data.Trans("few_players"), true)
 		return
 	}
 
 	rand.Shuffle(len(userIds), func(i, j int) { userIds[i], userIds[j] = userIds[j], userIds[i] })
 	for i, userId := range userIds {
-		trans := FindTransFunction(userId, data.Static)
+		trans := FindTransFunction(userId, staticData)
 		theme := trans("player_number_msg", map[string]interface{}{
 			"Number": i + 1,
 		})
 
-		chatId := db.GetChatId(userId)
-		data.Static.Chat.SendMessage(chatId, theme, 0, true)
+		chatId, isFound := db.GetTelegramUserChatId(userId)
+		if isFound {
+			staticData.Chat.SendMessage(chatId, theme, 0, true)
+		} else {
+			db.AddWebMessage(userId, theme, 10)
+		}
 	}
 	return
 }

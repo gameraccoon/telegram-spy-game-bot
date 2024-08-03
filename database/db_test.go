@@ -11,7 +11,7 @@ const (
 )
 
 func dropDatabase(fileName string) {
-	os.Remove(fileName)
+	_ = os.Remove(fileName)
 }
 
 func clearDb() {
@@ -125,15 +125,19 @@ func TestGetUserId(t *testing.T) {
 	var chatId1 int64 = 321
 	var chatId2 int64 = 123
 
-	id1 := db.GetUserId(chatId1, "")
-	id2 := db.GetUserId(chatId1, "")
-	id3 := db.GetUserId(chatId2, "")
+	id1 := db.GetOrCreateTelegramUserId(chatId1, "")
+	id2 := db.GetOrCreateTelegramUserId(chatId1, "")
+	id3 := db.GetOrCreateTelegramUserId(chatId2, "")
 
 	assert.Equal(id1, id2)
 	assert.NotEqual(id1, id3)
 
-	assert.Equal(chatId1, db.GetUserChatId(id1))
-	assert.Equal(chatId2, db.GetUserChatId(id3))
+	userChatId1, found := db.GetTelegramUserChatId(id1)
+	assert.True(found)
+	assert.Equal(chatId1, userChatId1)
+	userChatId3, found := db.GetTelegramUserChatId(id3)
+	assert.True(found)
+	assert.Equal(chatId2, userChatId3)
 }
 
 func TestUserLanguage(t *testing.T) {
@@ -146,8 +150,8 @@ func TestUserLanguage(t *testing.T) {
 	}
 	defer db.Disconnect()
 
-	userId1 := db.GetUserId(123, "")
-	userId2 := db.GetUserId(321, "")
+	userId1 := db.GetOrCreateTelegramUserId(123, "")
+	userId2 := db.GetOrCreateTelegramUserId(321, "")
 
 	db.SetUserLanguage(userId1, "en-US")
 
@@ -158,7 +162,7 @@ func TestUserLanguage(t *testing.T) {
 		assert.Equal("", lang2)
 	}
 
-	// in case of some side-effects
+	// in case of some side effects
 	{
 		lang1 := db.GetUserLanguage(userId1)
 		lang2 := db.GetUserLanguage(userId2)
@@ -177,8 +181,8 @@ func TestUserSession(t *testing.T) {
 	}
 	defer db.Disconnect()
 
-	userId1 := db.GetUserId(123, "")
-	userId2 := db.GetUserId(321, "")
+	userId1 := db.GetOrCreateTelegramUserId(123, "")
+	userId2 := db.GetOrCreateTelegramUserId(321, "")
 
 	sessionId, _, _ := db.CreateSession(userId1)
 	assert.True(db.DoesSessionExist(sessionId))
@@ -197,7 +201,8 @@ func TestUserSession(t *testing.T) {
 		assert.True(isInSession1)
 		assert.False(isInSession2)
 		assert.Equal(sessionId, sessionId1)
-		assert.Equal(int64(1), db.GetUsersCountInSession(sessionId1))
+		assert.Equal(int64(1), db.GetUsersCountInSession(sessionId1, true))
+		assert.Equal(int64(1), db.GetUsersCountInSession(sessionId1, false))
 
 		users := db.GetUsersInSession(sessionId)
 		assert.Equal(1, len(users))
@@ -215,7 +220,8 @@ func TestUserSession(t *testing.T) {
 		assert.True(isInSession2)
 		assert.Equal(sessionId, sessionId1)
 		assert.Equal(sessionId, sessionId2)
-		assert.Equal(int64(2), db.GetUsersCountInSession(sessionId))
+		assert.Equal(int64(2), db.GetUsersCountInSession(sessionId, true))
+		assert.Equal(int64(2), db.GetUsersCountInSession(sessionId, false))
 	}
 
 	db.LeaveSession(userId1)
@@ -227,7 +233,8 @@ func TestUserSession(t *testing.T) {
 		assert.False(isInSession1)
 		assert.True(isInSession2)
 		assert.Equal(sessionId, sessionId2)
-		assert.Equal(int64(1), db.GetUsersCountInSession(sessionId))
+		assert.Equal(int64(1), db.GetUsersCountInSession(sessionId, true))
+		assert.Equal(int64(1), db.GetUsersCountInSession(sessionId, false))
 	}
 
 	db.LeaveSession(userId2)
@@ -238,7 +245,8 @@ func TestUserSession(t *testing.T) {
 		_, isInSession2 := db.GetUserSession(userId2)
 		assert.False(isInSession1)
 		assert.False(isInSession2)
-		assert.Equal(int64(0), db.GetUsersCountInSession(sessionId))
+		assert.Equal(int64(0), db.GetUsersCountInSession(sessionId, true))
+		assert.Equal(int64(0), db.GetUsersCountInSession(sessionId, false))
 	}
 }
 
@@ -252,14 +260,23 @@ func TestSessionMessageId(t *testing.T) {
 	}
 	defer db.Disconnect()
 
-	userId1 := db.GetUserId(123, "")
+	userId1 := db.GetOrCreateTelegramUserId(123, "")
 	sessionMessageId := int64(32)
 
+	{
+		_, isFound := db.GetSessionMessageId(userId1)
+		assert.False(isFound)
+	}
 	db.SetSessionMessageId(userId1, sessionMessageId)
-	assert.Equal(sessionMessageId, db.GetSessionMessageId(userId1))
+
+	{
+		sessionId, isFound := db.GetSessionMessageId(userId1)
+		assert.True(isFound)
+		assert.Equal(sessionMessageId, sessionId)
+	}
 }
 
-func TestGameTheme(t *testing.T) {
+func TestAddWebUser(t *testing.T) {
 	assert := require.New(t)
 	db := createDbAndConnect(t)
 	defer clearDb()
@@ -269,16 +286,189 @@ func TestGameTheme(t *testing.T) {
 	}
 	defer db.Disconnect()
 
-	userId1 := db.GetUserId(123, "")
+	webUserToken := int64(10)
 
-	testTheme := "testTheme"
+	// we can add web users only if we have a session
+	userId := db.GetOrCreateTelegramUserId(123, "")
+	sessionId, _, _ := db.CreateSession(userId)
 
-	assert.False(db.IsThemeRevealed(userId1))
-	db.SetUserTheme(userId1, testTheme)
-	assert.False(db.IsThemeRevealed(userId1))
-	db.SetThemeRevealed(userId1, true)
-	assert.True(db.IsThemeRevealed(userId1))
-	assert.Equal(testTheme, db.GetUserTheme(userId1))
-	db.SetThemeRevealed(userId1, false)
-	assert.False(db.IsThemeRevealed(userId1))
+	assert.False(db.DoesWebUserExist(webUserToken))
+
+	wasAdded := db.AddWebUser(sessionId, webUserToken)
+	assert.True(wasAdded)
+
+	assert.True(db.DoesWebUserExist(webUserToken))
+
+	wasAdded = db.AddWebUser(sessionId, webUserToken)
+	assert.False(wasAdded) // same token
+
+	assert.Equal(int64(1), db.GetUsersCountInSession(sessionId, true))
+	assert.Equal(int64(2), db.GetUsersCountInSession(sessionId, false))
+
+	users := db.GetUsersInSession(sessionId)
+	assert.Equal(2, len(users))
+
+	for _, user := range users {
+		if user == userId {
+			continue
+		}
+		userSessionId, isInSession := db.GetUserSession(user)
+		assert.True(isInSession)
+		assert.Equal(sessionId, userSessionId)
+	}
+
+	_, isFound := db.GetWebUserId(webUserToken)
+	assert.True(isFound)
+
+	sessionToken, _ := db.GetTokenFromSessionId(sessionId)
+
+	// web users are not counted for the session survival
+	db.LeaveSession(userId)
+
+	assert.False(db.DoesSessionExist(sessionId))
+	_, isSessionFound := db.GetSessionIdFromToken(sessionToken)
+	assert.False(isSessionFound)
+	assert.False(db.DoesWebUserExist(webUserToken))
+	_, isFound = db.GetWebUserId(webUserToken)
+	assert.False(isFound)
+}
+
+func TestRemoveWebUser(t *testing.T) {
+	assert := require.New(t)
+	db := createDbAndConnect(t)
+	defer clearDb()
+	if db == nil {
+		t.Fail()
+		return
+	}
+	defer db.Disconnect()
+
+	webUserToken := int64(10)
+
+	userId := db.GetOrCreateTelegramUserId(123, "")
+	sessionId, _, _ := db.CreateSession(userId)
+
+	db.AddWebUser(sessionId, webUserToken)
+
+	assert.True(db.DoesWebUserExist(webUserToken))
+
+	db.RemoveWebUser(webUserToken)
+
+	assert.False(db.DoesWebUserExist(webUserToken))
+
+	assert.Equal(int64(1), db.GetUsersCountInSession(sessionId, false))
+}
+
+func TestWebMessages(t *testing.T) {
+	assert := require.New(t)
+	db := createDbAndConnect(t)
+	defer clearDb()
+	if db == nil {
+		t.Fail()
+		return
+	}
+	defer db.Disconnect()
+
+	userId := db.GetOrCreateTelegramUserId(123, "")
+	sessionId, _, _ := db.CreateSession(userId)
+
+	webUserToken := int64(42)
+	db.AddWebUser(sessionId, webUserToken)
+	webUserId, _ := db.GetWebUserId(webUserToken)
+
+	{
+		commands, newLastIndex := db.GetNewRecentWebMessages(webUserId, -1)
+		assert.Equal(0, len(commands))
+		assert.Equal(-1, newLastIndex)
+	}
+
+	db.AddWebMessage(webUserId, "command1", 10)
+	db.AddWebMessage(webUserId, "command2", 10)
+	db.AddWebMessage(webUserId, "command3", 10)
+
+	{
+		commands, newLastIndex := db.GetNewRecentWebMessages(webUserId, -1)
+		assert.Equal(3, len(commands))
+		assert.Equal(2, newLastIndex)
+		assert.Equal("command1", commands[0])
+		assert.Equal("command2", commands[1])
+		assert.Equal("command3", commands[2])
+	}
+
+	{
+		commands, newLastIndex := db.GetNewRecentWebMessages(webUserId, 0)
+		assert.Equal(2, len(commands))
+		assert.Equal(2, newLastIndex)
+		assert.Equal("command2", commands[0])
+		assert.Equal("command3", commands[1])
+	}
+
+	{
+		commands, newLastIndex := db.GetNewRecentWebMessages(webUserId, 1)
+		assert.Equal(1, len(commands))
+		assert.Equal(2, newLastIndex)
+		assert.Equal("command3", commands[0])
+	}
+
+	{
+		commands, newLastIndex := db.GetNewRecentWebMessages(webUserId, 2)
+		assert.Equal(0, len(commands))
+		assert.Equal(2, newLastIndex)
+	}
+
+	db.AddWebMessage(webUserId, "command4", 2)
+
+	{
+		messages, newLastIndex := db.GetNewRecentWebMessages(webUserId, 0)
+		assert.Equal(2, len(messages))
+		assert.Equal(3, newLastIndex)
+		assert.Equal("command3", messages[0])
+		assert.Equal("command4", messages[1])
+	}
+
+	db.LeaveSession(userId)
+
+	{
+		messages, newLastIndex := db.GetNewRecentWebMessages(webUserId, 0)
+		assert.Equal(0, len(messages))
+		assert.Equal(0, newLastIndex)
+	}
+}
+
+// regression test
+func TestWebMessagesClearing(t *testing.T) {
+	assert := require.New(t)
+	db := createDbAndConnect(t)
+	defer clearDb()
+	if db == nil {
+		t.Fail()
+		return
+	}
+	defer db.Disconnect()
+
+	userId := db.GetOrCreateTelegramUserId(123, "")
+
+	{
+		sessionId, _, _ := db.CreateSession(userId)
+
+		webUserToken := int64(42)
+		db.AddWebUser(sessionId, webUserToken)
+		webUserId, _ := db.GetWebUserId(webUserToken)
+
+		db.AddWebMessage(webUserId, "command1", 10)
+
+		db.RemoveWebUser(webUserToken)
+	}
+
+	{
+		sessionId, _, _ := db.CreateSession(userId)
+
+		webUserToken := int64(63)
+		db.AddWebUser(sessionId, webUserToken)
+		webUserId, _ := db.GetWebUserId(webUserToken)
+
+		commands, newLastIndex := db.GetNewRecentWebMessages(webUserId, -1)
+		assert.Equal(0, len(commands))
+		assert.Equal(-1, newLastIndex)
+	}
 }

@@ -1,12 +1,13 @@
 package database
 
 import (
+	"fmt"
 	"log"
 )
 
 const (
 	minimalVersion = "0.1"
-	latestVersion  = "0.1"
+	latestVersion  = "0.2"
 )
 
 type dbUpdater struct {
@@ -58,11 +59,57 @@ func makeUpdaters(versionFrom string, versionTo string) (updaters []dbUpdater) {
 
 func makeAllUpdaters() []dbUpdater {
 	return []dbUpdater{
-		// dbUpdater{
-		// 	version: "0.2",
-		// 	updateDb: func(db *SpyBotDb) {
-		// 		db.db.Exec("ALTER TABLE wallets ADD COLUMN contract_address TEXT NOT NULL DEFAULT('')")
-		// 	},
-		// },
+		{
+			version: "0.2",
+			updateDb: func(db *SpyBotDb) {
+				// for each 'users' record create a new record in the 'telegram_users' table
+				rows, err := db.db.Query("SELECT id, chat_id, language, IFNULL(current_session_message, 0) FROM users")
+				if err != nil {
+					log.Fatalf("Error while selecting users: %s", err)
+				}
+				defer func() {
+					err := rows.Close()
+					if err != nil {
+						log.Fatalf("Error while closing rows: %s", err)
+					}
+				}()
+
+				dataToTransfer := make([][]interface{}, 0)
+				for rows.Next() {
+					var id int64
+					var chatId int64
+					var language string
+					var currentSessionMessage int64
+					err := rows.Scan(&id, &chatId, &language, &currentSessionMessage)
+					if err != nil {
+						log.Fatalf("Error while scanning id: %s", err)
+					}
+
+					dataToTransfer = append(dataToTransfer, []interface{}{id, chatId, language, currentSessionMessage})
+				}
+
+				err = rows.Close()
+				if err != nil {
+					log.Fatalf("Error while closing rows: %s", err)
+				}
+
+				for _, data := range dataToTransfer {
+					currentSessionMessage := fmt.Sprintf("%d", data[3])
+					if currentSessionMessage == "0" {
+						currentSessionMessage = "NULL"
+					}
+					db.db.Exec(fmt.Sprintf("INSERT INTO telegram_users (user_id, chat_id, language, current_session_message) VALUES (%d, %d, '%s', %s)", data[0], data[1], data[2], currentSessionMessage))
+				}
+
+				// remove unused columns from 'users' table
+				db.db.Exec("ALTER TABLE users RENAME TO users_old")
+				db.db.Exec("CREATE TABLE" +
+					" users(id INTEGER NOT NULL PRIMARY KEY" +
+					",current_session INTEGER" +
+					")")
+				db.db.Exec("INSERT INTO users (id, current_session) SELECT id, current_session FROM users_old")
+				db.db.Exec("DROP TABLE users_old")
+			},
+		},
 	}
 }

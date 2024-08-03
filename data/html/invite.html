@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
+<title>Spy Game Bot</title>
+<style>
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin-top: 20%;
+}
+a {
+    display: inline-block;
+    padding: 10px 20px;
+    background-color: #0088cc;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+}
+a:hover {
+    background-color: #005580;
+}
+button {
+    padding: 10px 20px;
+    background-color: #0088cc;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+</style>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<script>
+function showError(message, jqXHR, textStatus) {
+    var errorMessage = jqXHR.responseText;
+    if (errorMessage === undefined) {
+        if (jqXHR.readyState === 0) {
+            errorMessage = "Network issue, check your connection";
+        } else {
+            errorMessage = "Code " + jqXHR.status;
+        }
+    }
+    $('#status').html('<p style="color: red;">' + message + '<br/>Error: ' + errorMessage + '</p>');
+}
+
+$(document).ready(function() {
+    var gameId = window.location.pathname.split('/').pop();
+
+    $('#show-options').click(function() {
+        $('#options').show();
+        $('#show-options').hide();
+    });
+
+    $('#open-in-telegram').click(function() {
+        window.location.href = 'https://telegram.me/TheKingSaysBot?start=' + gameId;
+    });
+
+    $('#join').click(function() {
+        $('#status').html('<p>Joining... please wait</p>');
+        $.post('/join', { gameId: gameId }, function(data) {
+            $('#status').html('<p>Redirecting to the game... please wait</p>');
+            window.location.href = '/user/' + data;
+        }).fail(function(jqXHR, textStatus, errorThrown){
+            showError("Failed to join the game", jqXHR, textStatus);
+        });
+    });
+});
+</script>
+</head>
+<body>
+<p>You are joining by invite link</p>
+<button id="open-in-telegram">Continue in Telegram</button>
+<p>or</p>
+<button id="join">Join from web</button>
+<div id="status"></div>
+</body>
+</html>

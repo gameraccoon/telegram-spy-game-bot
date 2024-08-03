@@ -15,8 +15,8 @@ func GetTextInputProcessorManager() dialogManager.TextInputProcessorManager {
 }
 
 func processConnectSession(additionalId int64, data *processing.ProcessData) bool {
-	isSuccessfull := staticFunctions.ConnectToSession(data, data.Message)
-	if isSuccessfull {
+	isSuccessful := staticFunctions.ConnectToSession(data, data.Message)
+	if isSuccessful {
 		return true
 	}
 

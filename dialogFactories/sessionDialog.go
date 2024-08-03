@@ -5,6 +5,7 @@ import (
 	"github.com/gameraccoon/telegram-bot-skeleton/dialog"
 	"github.com/gameraccoon/telegram-bot-skeleton/dialogFactory"
 	"github.com/gameraccoon/telegram-bot-skeleton/processing"
+	static "github.com/gameraccoon/telegram-spy-game-bot/staticData"
 	"github.com/gameraccoon/telegram-spy-game-bot/staticFunctions"
 	"github.com/nicksnyder/go-i18n/i18n"
 	"log"
@@ -27,9 +28,10 @@ func MakeSessionDialogFactory() dialogFactory.DialogFactory {
 	return &(sessionDialogFactory{
 		variants: []sessionVariantPrototype{
 			sessionVariantPrototype{
-				id:     "share",
-				textId: "share_link",
-				rowId:  1,
+				id:      "share",
+				textId:  "share_link",
+				process: shareLink,
+				rowId:   1,
 			},
 			sessionVariantPrototype{
 				id:      "discsess",
@@ -45,6 +47,41 @@ func MakeSessionDialogFactory() dialogFactory.DialogFactory {
 			},
 		},
 	})
+}
+
+func shareLink(sessionId int64, data *processing.ProcessData) bool {
+	db := staticFunctions.GetDb(data.Static)
+	staticData := data.Static
+
+	sessionToken, isFound := db.GetTokenFromSessionId(sessionId)
+
+	if !isFound {
+		log.Printf("Can't find session token for sessionId %d", sessionId)
+	}
+
+	config, configCastSuccess := staticData.Config.(static.StaticConfiguration)
+
+	if !configCastSuccess {
+		config = static.StaticConfiguration{}
+	}
+
+	data.SendMessage("Share this link with your friends to invite them to the game:", true)
+
+	data.SendMessage(fmt.Sprintf(
+		"Link to join the game:\n%s/invite/%s",
+		config.ShareWebAddress,
+		sessionToken,
+	),
+		true)
+
+	data.SendMessage(fmt.Sprintf(
+		"Or show them this QR code:\nhttps://api.qrserver.com/v1/create-qr-code/?size=150x150&margin=10&data=%s/invite/%s",
+		config.ShareWebAddress,
+		sessionToken,
+	),
+		false)
+
+	return true
 }
 
 func disconnectSession(sessionId int64, data *processing.ProcessData) bool {
@@ -87,7 +124,11 @@ func (factory *sessionDialogFactory) createVariants(trans i18n.TranslateFunc, se
 }
 
 func sendSpyfallLocation(sessionId int64, data *processing.ProcessData) bool {
-	staticFunctions.SendSpyfallLocationToAll(data, sessionId)
+	isSuccess := staticFunctions.SendSpyfallLocationToAll(data.Static, sessionId)
+	if !isSuccess {
+		trans := staticFunctions.FindTransFunction(data.UserId, data.Static)
+		data.SendMessage(trans("few_players"), true)
+	}
 	return true
 }
 
@@ -95,7 +136,7 @@ func (factory *sessionDialogFactory) MakeDialog(userId int64, trans i18n.Transla
 	db := staticFunctions.GetDb(staticData)
 
 	sessionId, _ := db.GetUserSession(userId)
-	countInSession := db.GetUsersCountInSession(sessionId)
+	countInSession := db.GetUsersCountInSession(sessionId, false)
 
 	translationMap := map[string]interface{}{
 		"Participants": countInSession,

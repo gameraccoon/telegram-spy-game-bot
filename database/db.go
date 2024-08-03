@@ -26,8 +26,6 @@ func ConnectDb(path string) (database *SpyBotDb, err error) {
 		return
 	}
 
-	// database.db.Exec("PRAGMA foreign_keys = ON")
-
 	database.db.Exec("CREATE TABLE IF NOT EXISTS" +
 		" global_vars(name TEXT PRIMARY KEY" +
 		",integer_value INTEGER" +
@@ -41,25 +39,54 @@ func ConnectDb(path string) (database *SpyBotDb, err error) {
 
 	database.db.Exec("CREATE TABLE IF NOT EXISTS" +
 		" users(id INTEGER NOT NULL PRIMARY KEY" +
+
+		// session related data
+		",current_session INTEGER" +
+		")")
+
+	database.db.Exec("CREATE TABLE IF NOT EXISTS" +
+		" telegram_users(id INTEGER NOT NULL PRIMARY KEY" +
+		",user_id INTEGER UNIQUE NOT NULL" +
 		",chat_id INTEGER UNIQUE NOT NULL" +
 		",language TEXT NOT NULL" +
 
 		// session related data
-		",current_session INTEGER" +
 		",current_session_message INTEGER" +
-		",theme TEXT" +
-		",is_theme_revealed INTEGER" +
-		// ",FOREIGN KEY(current_session) REFERENCES sessions(id) ON DELETE SET NULL" +
 		")")
 
-	database.db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS" +
-		" chat_id_index ON users(chat_id)")
+	database.db.Exec("CREATE TABLE IF NOT EXISTS" +
+		" web_users(id INTEGER NOT NULL PRIMARY KEY" +
+		",user_id INTEGER UNIQUE NOT NULL" +
+		",token INTEGER UNIQUE NOT NULL" +
+		")")
+
+	database.db.Exec("CREATE TABLE IF NOT EXISTS" +
+		" recent_web_messages(id INTEGER NOT NULL PRIMARY KEY" +
+		",user_id INTEGER NOT NULL" +
+		",index_for_user INTEGER NOT NULL" +
+		",message TEXT NOT NULL" +
+		")")
 
 	database.db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS" +
 		" token_index ON sessions(token)")
 
 	database.db.Exec("CREATE INDEX IF NOT EXISTS" +
 		" current_session_index ON users(current_session)")
+
+	database.db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS" +
+		" chat_id_index ON telegram_users(chat_id)")
+
+	database.db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS" +
+		" user_id_index ON telegram_users(user_id)")
+
+	database.db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS" +
+		" token_index ON web_users(token)")
+
+	database.db.Exec("CREATE UNIQUE INDEX IF NOT EXISTS" +
+		" user_id_index ON web_users(user_id)")
+
+	database.db.Exec("CREATE INDEX IF NOT EXISTS" +
+		" user_id_index ON recent_web_messages(user_id)")
 
 	return
 }
@@ -87,7 +114,12 @@ func (database *SpyBotDb) GetDatabaseVersion() (version string) {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	defer rows.Close()
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+	}()
 
 	if rows.Next() {
 		err := rows.Scan(&version)
@@ -112,85 +144,71 @@ func (database *SpyBotDb) SetDatabaseVersion(version string) {
 	database.db.Exec(fmt.Sprintf("INSERT INTO global_vars (name, string_value) VALUES ('version', '%s')", safeVersion))
 }
 
-func (database *SpyBotDb) GetUserId(chatId int64, userLangCode string) (userId int64) {
+func (database *SpyBotDb) GetOrCreateTelegramUserId(chatId int64, userLangCode string) (userId int64) {
 	database.mutex.Lock()
 	defer database.mutex.Unlock()
 
-	database.db.Exec(fmt.Sprintf("INSERT OR IGNORE INTO users(chat_id, language) "+
-		"VALUES (%d, '%s')", chatId, userLangCode))
-
-	rows, err := database.db.Query(fmt.Sprintf("SELECT id FROM users WHERE chat_id=%d", chatId))
+	// first try to find an existing user
+	rows, err := database.db.Query(fmt.Sprintf("SELECT id FROM telegram_users WHERE chat_id=%d", chatId))
 	if err != nil {
 		log.Fatal(err.Error())
 		return
 	}
-	defer rows.Close()
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+	}()
 
 	if rows.Next() {
+		// user is found, we don't need to do anything, return the id
 		err := rows.Scan(&userId)
 		if err != nil {
 			log.Fatal(err.Error())
 		}
-	} else {
-		err = rows.Err()
-		if err != nil {
-			log.Fatal(err)
-		}
-		log.Fatal("No user found")
+		return
 	}
+
+	err = rows.Close()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	database.db.Exec(fmt.Sprintf("INSERT INTO users DEFAULT VALUES"))
+
+	userId = database.getLastInsertedItemId()
+
+	database.db.Exec(fmt.Sprintf("INSERT INTO telegram_users(user_id, chat_id, language) "+
+		"VALUES (%d, %d, '%s')", userId, chatId, userLangCode))
 
 	return
 }
 
-func (database *SpyBotDb) GetChatId(userId int64) (chatId int64) {
+func (database *SpyBotDb) GetTelegramUserChatId(userId int64) (chatId int64, isFound bool) {
 	database.mutex.Lock()
 	defer database.mutex.Unlock()
 
-	rows, err := database.db.Query(fmt.Sprintf("SELECT chat_id FROM users WHERE id=%d", userId))
+	rows, err := database.db.Query(fmt.Sprintf("SELECT chat_id FROM telegram_users WHERE user_id=%d", userId))
 	if err != nil {
 		log.Fatal(err.Error())
 		return
 	}
-	defer rows.Close()
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+	}()
 
 	if rows.Next() {
 		err := rows.Scan(&chatId)
 		if err != nil {
 			log.Fatal(err.Error())
 		}
+		isFound = true
 	} else {
-		err = rows.Err()
-		if err != nil {
-			log.Fatal(err)
-		}
-		log.Fatal("No user found")
-	}
-
-	return
-}
-
-func (database *SpyBotDb) GetUserChatId(userId int64) (chatId int64) {
-	database.mutex.Lock()
-	defer database.mutex.Unlock()
-
-	rows, err := database.db.Query(fmt.Sprintf("SELECT chat_id FROM users WHERE id=%d", userId))
-	if err != nil {
-		log.Fatal(err.Error())
-		return
-	}
-	defer rows.Close()
-
-	if rows.Next() {
-		err := rows.Scan(&chatId)
-		if err != nil {
-			log.Fatal(err.Error())
-		}
-	} else {
-		err = rows.Err()
-		if err != nil {
-			log.Fatal(err)
-		}
-		log.Fatal("No user found")
+		isFound = false
 	}
 
 	return
@@ -201,7 +219,12 @@ func (database *SpyBotDb) getLastInsertedItemId() (id int64) {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	defer rows.Close()
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+	}()
 
 	if rows.Next() {
 		err := rows.Scan(&id)
@@ -223,18 +246,23 @@ func (database *SpyBotDb) SetUserLanguage(userId int64, language string) {
 	database.mutex.Lock()
 	defer database.mutex.Unlock()
 
-	database.db.Exec(fmt.Sprintf("UPDATE OR ROLLBACK users SET language='%s' WHERE id=%d", language, userId))
+	database.db.Exec(fmt.Sprintf("UPDATE OR ROLLBACK telegram_users SET language='%s' WHERE id=%d", language, userId))
 }
 
 func (database *SpyBotDb) GetUserLanguage(userId int64) (language string) {
 	database.mutex.Lock()
 	defer database.mutex.Unlock()
 
-	rows, err := database.db.Query(fmt.Sprintf("SELECT language FROM users WHERE id=%d AND language IS NOT NULL", userId))
+	rows, err := database.db.Query(fmt.Sprintf("SELECT language FROM telegram_users WHERE id=%d AND language IS NOT NULL", userId))
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	defer rows.Close()
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+	}()
 
 	if rows.Next() {
 		err := rows.Scan(&language)
@@ -260,7 +288,12 @@ func (database *SpyBotDb) GetUserSession(userId int64) (sessionId int64, isInSes
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	defer rows.Close()
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+	}()
 
 	if rows.Next() {
 		err := rows.Scan(&sessionId)
@@ -287,7 +320,12 @@ func (database *SpyBotDb) DoesSessionExist(sessionId int64) (isExists bool) {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	defer rows.Close()
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+	}()
 
 	isExists = rows.Next()
 
@@ -325,15 +363,31 @@ func (database *SpyBotDb) ConnectToSession(userId int64, sessionId int64) (isSuc
 	return
 }
 
-func (database *SpyBotDb) GetUsersCountInSession(sessionId int64) (usersCount int64) {
+func (database *SpyBotDb) GetUsersCountInSession(sessionId int64, onlyTelegramUsers bool) (usersCount int64) {
 	database.mutex.Lock()
 	defer database.mutex.Unlock()
 
-	rows, err := database.db.Query(fmt.Sprintf("SELECT COUNT(*) FROM users WHERE current_session=%d", sessionId))
+	return database.getUsersCountInSessionUnsafe(sessionId, onlyTelegramUsers)
+}
+
+func (database *SpyBotDb) getUsersCountInSessionUnsafe(sessionId int64, onlyTelegramUsers bool) (usersCount int64) {
+	var request string
+	if onlyTelegramUsers {
+		request = fmt.Sprintf("SELECT COUNT(*) FROM users JOIN telegram_users ON users.id=telegram_users.user_id WHERE current_session=%d", sessionId)
+	} else {
+		request = fmt.Sprintf("SELECT COUNT(*) FROM users WHERE current_session=%d", sessionId)
+	}
+
+	rows, err := database.db.Query(request)
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	defer rows.Close()
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+	}()
 
 	if rows.Next() {
 		err := rows.Scan(&usersCount)
@@ -358,7 +412,12 @@ func (database *SpyBotDb) GetUsersInSession(sessionId int64) (users []int64) {
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	defer rows.Close()
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+	}()
 
 	for rows.Next() {
 		var userId int64
@@ -382,16 +441,16 @@ func (database *SpyBotDb) LeaveSession(userId int64) (sessionId int64, wasInSess
 	database.mutex.Lock()
 	defer database.mutex.Unlock()
 
-	database.db.Exec(fmt.Sprintf("UPDATE OR ROLLBACK users SET current_session=NULL, theme=NULL, is_theme_revealed=NULL WHERE id=%d", userId))
+	database.db.Exec(fmt.Sprintf("UPDATE OR ROLLBACK users SET current_session=NULL WHERE id=%d", userId))
 
-	// delete session if it's empty
-	database.mutex.Unlock()
-	if database.GetUsersCountInSession(sessionId) == 0 {
-		database.mutex.Lock()
+	// delete session if it doesn't have Telegram users in it
+	if database.getUsersCountInSessionUnsafe(sessionId, true) == 0 {
+		database.db.Exec(fmt.Sprintf("DELETE FROM recent_web_messages WHERE user_id in (select user_id from users where current_session=%d)", sessionId))
 		database.db.Exec(fmt.Sprintf("DELETE FROM sessions WHERE id=%d", sessionId))
-		database.mutex.Unlock()
+		database.db.Exec(fmt.Sprintf("DELETE FROM web_users WHERE user_id IN (SELECT id FROM users WHERE current_session=%d)", sessionId))
+		// the remaining users that have this session is the web users that we just deleted
+		database.db.Exec(fmt.Sprintf("DELETE FROM users WHERE current_session=%d", sessionId))
 	}
-	database.mutex.Lock()
 
 	return
 }
@@ -400,24 +459,30 @@ func (database *SpyBotDb) SetSessionMessageId(userId int64, messageId int64) {
 	database.mutex.Lock()
 	defer database.mutex.Unlock()
 
-	database.db.Exec(fmt.Sprintf("UPDATE OR ROLLBACK users SET current_session_message=%d WHERE id=%d", messageId, userId))
+	database.db.Exec(fmt.Sprintf("UPDATE OR ROLLBACK telegram_users SET current_session_message=%d WHERE user_id=%d", messageId, userId))
 }
 
-func (database *SpyBotDb) GetSessionMessageId(userId int64) (messageId int64) {
+func (database *SpyBotDb) GetSessionMessageId(userId int64) (messageId int64, isFound bool) {
 	database.mutex.Lock()
 	defer database.mutex.Unlock()
 
-	rows, err := database.db.Query(fmt.Sprintf("SELECT current_session_message FROM users WHERE id=%d AND current_session_message IS NOT NULL", userId))
+	rows, err := database.db.Query(fmt.Sprintf("SELECT current_session_message FROM telegram_users WHERE user_id=%d AND current_session_message IS NOT NULL", userId))
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	defer rows.Close()
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+	}()
 
 	if rows.Next() {
 		err := rows.Scan(&messageId)
 		if err != nil {
 			log.Fatal(err.Error())
 		}
+		isFound = true
 	} else {
 		err = rows.Err()
 		if err != nil {
@@ -436,7 +501,12 @@ func (database *SpyBotDb) GetSessionIdFromToken(token string) (sessionId int64, 
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	defer rows.Close()
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+	}()
 
 	if rows.Next() {
 		err := rows.Scan(&sessionId)
@@ -463,7 +533,12 @@ func (database *SpyBotDb) GetTokenFromSessionId(sessionId int64) (token string, 
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	defer rows.Close()
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+	}()
 
 	if rows.Next() {
 		err := rows.Scan(&token)
@@ -482,30 +557,117 @@ func (database *SpyBotDb) GetTokenFromSessionId(sessionId int64) (token string, 
 	return
 }
 
-func (database *SpyBotDb) SetUserTheme(userId int64, theme string) {
+func (database *SpyBotDb) AddWebUser(sessionId int64, token int64) (wasAdded bool) {
 	database.mutex.Lock()
 	defer database.mutex.Unlock()
 
-	database.db.Exec(fmt.Sprintf("UPDATE OR ROLLBACK users SET theme='%s' WHERE id=%d", dbBase.SanitizeString(theme), userId))
+	rows, err := database.db.Query(fmt.Sprintf("SELECT 1 FROM web_users WHERE token=%d", token))
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+	}()
+
+	if rows.Next() {
+		return false
+	}
+
+	err = rows.Close()
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+
+	database.db.Exec(fmt.Sprintf("INSERT INTO users (current_session) VALUES (%d)", sessionId))
+
+	userId := database.getLastInsertedItemId()
+
+	database.db.Exec(fmt.Sprintf("INSERT INTO web_users (user_id, token) VALUES (%d, %d)", userId, token))
+
+	return true
+}
+
+func (database *SpyBotDb) RemoveWebUser(token int64) {
+	database.mutex.Lock()
+	defer database.mutex.Unlock()
+
+	rows, err := database.db.Query(fmt.Sprintf("SELECT user_id FROM web_users WHERE token=%d", token))
+	if err != nil {
+		log.Fatal(err.Error())
+		return
+	}
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+	}()
+
+	var userId int64
+	if rows.Next() {
+		err := rows.Scan(&userId)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+	} else {
+		return
+	}
+
+	err = rows.Close()
+	if err != nil {
+		log.Fatal(err.Error())
+		return
+	}
+
+	database.db.Exec(fmt.Sprintf("DELETE FROM web_users WHERE token=%d", token))
+	database.db.Exec(fmt.Sprintf("DELETE FROM users WHERE id=%d", userId))
+	database.db.Exec(fmt.Sprintf("DELETE FROM recent_web_messages WHERE user_id=%d", userId))
+}
+
+func (database *SpyBotDb) DoesWebUserExist(token int64) (isExists bool) {
+	database.mutex.Lock()
+	defer database.mutex.Unlock()
+
+	rows, err := database.db.Query(fmt.Sprintf("SELECT 1 FROM web_users WHERE token=%d", token))
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+	}()
+
+	isExists = rows.Next()
 
 	return
 }
 
-func (database *SpyBotDb) GetUserTheme(userId int64) (theme string) {
+func (database *SpyBotDb) GetWebUserId(token int64) (userId int64, isFound bool) {
 	database.mutex.Lock()
 	defer database.mutex.Unlock()
 
-	rows, err := database.db.Query(fmt.Sprintf("SELECT theme FROM users WHERE id=%d AND theme IS NOT NULL", userId))
+	rows, err := database.db.Query(fmt.Sprintf("SELECT user_id FROM web_users WHERE token=%d", token))
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	defer rows.Close()
-
-	if rows.Next() {
-		err := rows.Scan(&theme)
+	defer func() {
+		err := rows.Close()
 		if err != nil {
 			log.Fatal(err.Error())
 		}
+	}()
+
+	if rows.Next() {
+		err := rows.Scan(&userId)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+		isFound = true
 	} else {
 		err = rows.Err()
 		if err != nil {
@@ -516,31 +678,39 @@ func (database *SpyBotDb) GetUserTheme(userId int64) (theme string) {
 	return
 }
 
-func (database *SpyBotDb) IsThemeRevealed(userId int64) (isRevealed bool) {
+func (database *SpyBotDb) AddWebMessage(userId int64, message string, limit int) {
 	database.mutex.Lock()
 	defer database.mutex.Unlock()
 
-	rows, err := database.db.Query(fmt.Sprintf("SELECT 1 FROM users WHERE id=%d AND is_theme_revealed = 1 LIMIT 1", userId))
+	database.db.Exec(fmt.Sprintf("INSERT INTO recent_web_messages (user_id, index_for_user, message) VALUES (%d, (SELECT IFNULL(MAX(index_for_user), -1) FROM recent_web_messages WHERE user_id=%d) + 1, '%s')", userId, userId, dbBase.SanitizeString(message)))
+	database.db.Exec(fmt.Sprintf("DELETE FROM recent_web_messages WHERE user_id=%d AND index_for_user<=((SELECT MAX(index_for_user) FROM recent_web_messages WHERE user_id=%d) - %d)", userId, userId, limit))
+}
+
+func (database *SpyBotDb) GetNewRecentWebMessages(userId int64, lastIndex int) (messages []string, newLastIndex int) {
+	database.mutex.Lock()
+	defer database.mutex.Unlock()
+
+	newLastIndex = lastIndex
+
+	rows, err := database.db.Query(fmt.Sprintf("SELECT message, index_for_user FROM recent_web_messages WHERE user_id=%d AND index_for_user>%d", userId, lastIndex))
 	if err != nil {
 		log.Fatal(err.Error())
 	}
-	defer rows.Close()
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+	}()
 
-	isRevealed = rows.Next()
-
-	return
-}
-
-func (database *SpyBotDb) SetThemeRevealed(userId int64, isRevealed bool) {
-	database.mutex.Lock()
-	defer database.mutex.Unlock()
-
-	isRevealedInt := 0
-	if isRevealed {
-		isRevealedInt = 1
+	for rows.Next() {
+		var message string
+		err := rows.Scan(&message, &newLastIndex)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+		messages = append(messages, message)
 	}
-
-	database.db.Exec(fmt.Sprintf("UPDATE OR ROLLBACK users SET is_theme_revealed=%d WHERE id=%d", isRevealedInt, userId))
 
 	return
 }

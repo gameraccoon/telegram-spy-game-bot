@@ -23,6 +23,7 @@
 	"theme_sent": { "other": "Тема была успешно отправлена остальным игрокам" },
 	"theme_spy": { "other": "Вы - шпион" },
 	"language_changed": { "other": "Новый язык успешно применен" },
+	"spoiler_terminator" : { "other": "Переоткройте диалог чтобы скрыть сообщение" },
 
 	"player_number_msg": { "other": "Вы №{{.Number}}" },
 

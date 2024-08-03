@@ -15,4 +15,7 @@ type StaticConfiguration struct {
 	DefaultLanguage    string
 	ExtendedLog        bool
 	SpyfallLocations   []SpyfallLocation
+	RunHttpServer      bool
+	HttpServerPort     int
+	ShareWebAddress    string
 }

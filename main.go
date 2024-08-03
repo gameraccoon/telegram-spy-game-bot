@@ -8,6 +8,7 @@ import (
 	"github.com/gameraccoon/telegram-bot-skeleton/telegramChat"
 	"github.com/gameraccoon/telegram-spy-game-bot/database"
 	"github.com/gameraccoon/telegram-spy-game-bot/dialogFactories"
+	"github.com/gameraccoon/telegram-spy-game-bot/httpServer"
 	static "github.com/gameraccoon/telegram-spy-game-bot/staticData"
 	"github.com/nicksnyder/go-i18n/i18n"
 	"io/ioutil"
@@ -98,7 +99,6 @@ func main() {
 	dialogManager.RegisterDialogFactory("lc", dialogFactories.MakeLanguageSelectDialogFactory())
 	dialogManager.RegisterDialogFactory("se", dialogFactories.MakeSessionDialogFactory())
 	dialogManager.RegisterDialogFactory("ns", dialogFactories.MakeNoSessionDialogFactory())
-	dialogManager.RegisterDialogFactory("th", dialogFactories.MakeThemeDialogFactory())
 	dialogManager.RegisterTextInputProcessorManager(dialogFactories.GetTextInputProcessorManager())
 
 	staticData := &processing.StaticProccessStructs{
@@ -113,6 +113,11 @@ func main() {
 	}
 
 	staticData.Init()
+
+	if config.RunHttpServer {
+		log.Println("Starting HTTP server")
+		go httpServer.HandleHttpRequests(config.HttpServerPort, staticData)
+	}
 
 	startUpdating(chat, dialogManager, staticData)
 }
