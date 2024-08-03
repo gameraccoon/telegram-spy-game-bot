@@ -4,14 +4,14 @@ import (
 	"github.com/gameraccoon/telegram-bot-skeleton/dialog"
 	"github.com/gameraccoon/telegram-bot-skeleton/dialogFactory"
 	"github.com/gameraccoon/telegram-bot-skeleton/processing"
-	"github.com/nicksnyder/go-i18n/i18n"
-	"github.com/gameraccoon/telegram-spy-game-bot/staticFunctions"
 	static "github.com/gameraccoon/telegram-spy-game-bot/staticData"
+	"github.com/gameraccoon/telegram-spy-game-bot/staticFunctions"
+	"github.com/nicksnyder/go-i18n/i18n"
 )
 
 type languageSelectVariantPrototype struct {
-	id string
-	text string
+	id      string
+	text    string
 	process func(*processing.ProcessData) bool
 }
 
@@ -43,9 +43,9 @@ func (factory *languageSelectDialogFactory) createVariants(staticData *processin
 
 	for _, lang := range config.AvailableLanguages {
 		variants = append(variants, dialog.Variant{
-			Id:   lang.Key,
-			Text: lang.Name,
-			RowId: itemId / itemsInRow + 1,
+			Id:    lang.Key,
+			Text:  lang.Name,
+			RowId: itemId/itemsInRow + 1,
 		})
 		itemId = itemId + 1
 	}

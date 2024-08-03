@@ -48,7 +48,7 @@ func makeUpdaters(versionFrom string, versionTo string) (updaters []dbUpdater) {
 	}
 
 	if len(updaters) > 0 {
-		lastFoundVersion := updaters[len(updaters) - 1].version
+		lastFoundVersion := updaters[len(updaters)-1].version
 		if lastFoundVersion != versionTo {
 			log.Fatalf("Last version updater not found. Expected: %s Found: %s", versionTo, lastFoundVersion)
 		}

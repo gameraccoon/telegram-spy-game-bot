@@ -2,14 +2,14 @@ package database
 
 import (
 	"fmt"
-	_ "github.com/mattn/go-sqlite3"
 	dbBase "github.com/gameraccoon/telegram-bot-skeleton/database"
+	_ "github.com/mattn/go-sqlite3"
 	"log"
 	"sync"
 )
 
 type SpyBotDb struct {
-	db dbBase.Database
+	db    dbBase.Database
 	mutex sync.Mutex
 }
 
@@ -289,7 +289,7 @@ func (database *SpyBotDb) DoesSessionExist(sessionId int64) (isExists bool) {
 	}
 	defer rows.Close()
 
-	isExists = rows.Next();
+	isExists = rows.Next()
 
 	return
 }
@@ -526,7 +526,7 @@ func (database *SpyBotDb) IsThemeRevealed(userId int64) (isRevealed bool) {
 	}
 	defer rows.Close()
 
-	isRevealed = rows.Next();
+	isRevealed = rows.Next()
 
 	return
 }

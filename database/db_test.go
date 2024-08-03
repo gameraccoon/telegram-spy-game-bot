@@ -205,7 +205,7 @@ func TestUserSession(t *testing.T) {
 			assert.Equal(userId1, users[0])
 		}
 	}
-	
+
 	db.ConnectToSession(userId2, sessionId)
 
 	{
@@ -258,7 +258,6 @@ func TestSessionMessageId(t *testing.T) {
 	db.SetSessionMessageId(userId1, sessionMessageId)
 	assert.Equal(sessionMessageId, db.GetSessionMessageId(userId1))
 }
-
 
 func TestGameTheme(t *testing.T) {
 	assert := require.New(t)

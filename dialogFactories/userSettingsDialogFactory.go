@@ -4,21 +4,21 @@ import (
 	"github.com/gameraccoon/telegram-bot-skeleton/dialog"
 	"github.com/gameraccoon/telegram-bot-skeleton/dialogFactory"
 	"github.com/gameraccoon/telegram-bot-skeleton/processing"
-	"github.com/nicksnyder/go-i18n/i18n"
-	"github.com/gameraccoon/telegram-spy-game-bot/staticFunctions"
 	static "github.com/gameraccoon/telegram-spy-game-bot/staticData"
+	"github.com/gameraccoon/telegram-spy-game-bot/staticFunctions"
+	"github.com/nicksnyder/go-i18n/i18n"
 )
 
 type userSettingsData struct {
-	userId int64
+	userId     int64
 	staticData *processing.StaticProccessStructs
 }
 
 type userSettingsVariantPrototype struct {
-	id string
-	textId string
-	process func(int64, *processing.ProcessData) bool
-	rowId int
+	id         string
+	textId     string
+	process    func(int64, *processing.ProcessData) bool
+	rowId      int
 	isActiveFn func(*userSettingsData) bool
 }
 
@@ -30,10 +30,10 @@ func MakeUserSettingsDialogFactory() dialogFactory.DialogFactory {
 	return &(userSettingsDialogFactory{
 		variants: []userSettingsVariantPrototype{
 			userSettingsVariantPrototype{
-				id: "lang",
-				textId: "change_language",
+				id:      "lang",
+				textId:  "change_language",
 				process: changeLanguage,
-				rowId:1,
+				rowId:   1,
 			},
 		},
 	})
@@ -50,8 +50,8 @@ func (factory *userSettingsDialogFactory) createVariants(settingsData *userSetti
 	for _, variant := range factory.variants {
 		if variant.isActiveFn == nil || variant.isActiveFn(settingsData) {
 			variants = append(variants, dialog.Variant{
-				Id:   variant.id,
-				Text: trans(variant.textId),
+				Id:    variant.id,
+				Text:  trans(variant.textId),
 				RowId: variant.rowId,
 			})
 		}
@@ -60,8 +60,8 @@ func (factory *userSettingsDialogFactory) createVariants(settingsData *userSetti
 }
 
 func (factory *userSettingsDialogFactory) MakeDialog(userId int64, trans i18n.TranslateFunc, staticData *processing.StaticProccessStructs, customData interface{}) *dialog.Dialog {
-	settingsData := userSettingsData {
-		userId: userId,
+	settingsData := userSettingsData{
+		userId:     userId,
 		staticData: staticData,
 	}
 
@@ -84,8 +84,8 @@ func (factory *userSettingsDialogFactory) MakeDialog(userId int64, trans i18n.Tr
 		}
 	}
 
-	translationMap := map[string]interface{} {
-		"Lang":     langName,
+	translationMap := map[string]interface{}{
+		"Lang": langName,
 	}
 
 	return &dialog.Dialog{

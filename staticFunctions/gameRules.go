@@ -62,7 +62,9 @@ func SendSpyfallLocationToAll(data *processing.ProcessData, sessionId int64) (su
 
 	locationIdx := rand.Intn(len(config.SpyfallLocations))
 	locationInfoCopy := config.SpyfallLocations[locationIdx]
-	rand.Shuffle(len(locationInfoCopy.Roles), func(i, j int) { locationInfoCopy.Roles[i], locationInfoCopy.Roles[j] = locationInfoCopy.Roles[j], locationInfoCopy.Roles[i] })
+	rand.Shuffle(len(locationInfoCopy.Roles), func(i, j int) {
+		locationInfoCopy.Roles[i], locationInfoCopy.Roles[j] = locationInfoCopy.Roles[j], locationInfoCopy.Roles[i]
+	})
 
 	userIds := db.GetUsersInSession(sessionId)
 
@@ -80,10 +82,10 @@ func SendSpyfallLocationToAll(data *processing.ProcessData, sessionId int64) (su
 		var theme string
 		if i == spyIdx {
 			theme = trans("spyfall_theme_spy")
-		} else if roleIdx < len(locationInfoCopy.Roles) - 1 {
-			theme = trans("spyfall_theme", map[string]interface{} {
+		} else if roleIdx < len(locationInfoCopy.Roles)-1 {
+			theme = trans("spyfall_theme", map[string]interface{}{
 				"Location": trans("spyfall_loc_" + locationInfoCopy.LocationId),
-				"Role": trans("spyfall_role_" + locationInfoCopy.LocationId + "_" + locationInfoCopy.Roles[roleIdx]),
+				"Role":     trans("spyfall_role_" + locationInfoCopy.LocationId + "_" + locationInfoCopy.Roles[roleIdx]),
 			})
 			roleIdx += 1
 		}
@@ -106,7 +108,7 @@ func SendSpyfallLocationsList(data *processing.ProcessData) {
 
 	themesList := []string{}
 	for _, location := range config.SpyfallLocations {
-		themesList = append(themesList, data.Trans("spyfall_loc_" + location.LocationId))
+		themesList = append(themesList, data.Trans("spyfall_loc_"+location.LocationId))
 	}
 
 	data.SendMessage(strings.Join(themesList[:], "\n"), true)
@@ -125,8 +127,8 @@ func GiveRandomNumbersToPlayers(data *processing.ProcessData, sessionId int64) {
 	rand.Shuffle(len(userIds), func(i, j int) { userIds[i], userIds[j] = userIds[j], userIds[i] })
 	for i, userId := range userIds {
 		trans := FindTransFunction(userId, data.Static)
-		theme := trans("player_number_msg", map[string]interface{} {
-			"Number": i+1,
+		theme := trans("player_number_msg", map[string]interface{}{
+			"Number": i + 1,
 		})
 
 		chatId := db.GetChatId(userId)

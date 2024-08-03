@@ -5,17 +5,17 @@ import (
 	"github.com/gameraccoon/telegram-bot-skeleton/dialog"
 	"github.com/gameraccoon/telegram-bot-skeleton/dialogFactory"
 	"github.com/gameraccoon/telegram-bot-skeleton/processing"
-	"github.com/nicksnyder/go-i18n/i18n"
 	"github.com/gameraccoon/telegram-spy-game-bot/staticFunctions"
+	"github.com/nicksnyder/go-i18n/i18n"
 	"log"
 	"strconv"
 )
 
 type sessionVariantPrototype struct {
-	id string
-	textId string
-	process func(int64, *processing.ProcessData) bool
-	rowId int
+	id         string
+	textId     string
+	process    func(int64, *processing.ProcessData) bool
+	rowId      int
 	isActiveFn func() bool
 }
 
@@ -27,21 +27,21 @@ func MakeSessionDialogFactory() dialogFactory.DialogFactory {
 	return &(sessionDialogFactory{
 		variants: []sessionVariantPrototype{
 			sessionVariantPrototype{
-				id: "share",
+				id:     "share",
 				textId: "share_link",
-				rowId:1,
+				rowId:  1,
 			},
 			sessionVariantPrototype{
-				id: "discsess",
-				textId: "disconnect_session",
+				id:      "discsess",
+				textId:  "disconnect_session",
 				process: disconnectSession,
-				rowId:1,
+				rowId:   1,
 			},
 			sessionVariantPrototype{
-				id: "spyfallloc",
-				textId: "send_spyfall_location",
+				id:      "spyfallloc",
+				textId:  "send_spyfall_location",
 				process: sendSpyfallLocation,
-				rowId:2,
+				rowId:   2,
 			},
 		},
 	})
@@ -75,10 +75,10 @@ func (factory *sessionDialogFactory) createVariants(trans i18n.TranslateFunc, se
 			}
 
 			variants = append(variants, dialog.Variant{
-				Id:   variant.id,
-				Text: trans(variant.textId),
-				Url: url,
-				RowId: variant.rowId,
+				Id:           variant.id,
+				Text:         trans(variant.textId),
+				Url:          url,
+				RowId:        variant.rowId,
 				AdditionalId: strconv.FormatInt(sessionId, 10),
 			})
 		}
@@ -97,7 +97,7 @@ func (factory *sessionDialogFactory) MakeDialog(userId int64, trans i18n.Transla
 	sessionId, _ := db.GetUserSession(userId)
 	countInSession := db.GetUsersCountInSession(sessionId)
 
-	translationMap := map[string]interface{} {
+	translationMap := map[string]interface{}{
 		"Participants": countInSession,
 	}
 

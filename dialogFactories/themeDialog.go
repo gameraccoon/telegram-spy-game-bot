@@ -4,16 +4,16 @@ import (
 	"github.com/gameraccoon/telegram-bot-skeleton/dialog"
 	"github.com/gameraccoon/telegram-bot-skeleton/dialogFactory"
 	"github.com/gameraccoon/telegram-bot-skeleton/processing"
-	"github.com/nicksnyder/go-i18n/i18n"
 	"github.com/gameraccoon/telegram-spy-game-bot/staticFunctions"
+	"github.com/nicksnyder/go-i18n/i18n"
 	"log"
 )
 
 type themeVariantPrototype struct {
-	id string
-	textId string
-	process func(*processing.ProcessData) bool
-	rowId int
+	id         string
+	textId     string
+	process    func(*processing.ProcessData) bool
+	rowId      int
 	isActiveFn func(bool) bool
 }
 
@@ -25,18 +25,18 @@ func MakeThemeDialogFactory() dialogFactory.DialogFactory {
 	return &(themeDialogFactory{
 		variants: []themeVariantPrototype{
 			themeVariantPrototype{
-				id: "showtheme",
-				textId: "show_theme",
-				process: revealTheme,
+				id:         "showtheme",
+				textId:     "show_theme",
+				process:    revealTheme,
 				isActiveFn: isThemeHidden,
-				rowId:1,
+				rowId:      1,
 			},
 			themeVariantPrototype{
-				id: "hidetheme",
-				textId: "hide_theme",
-				process: hideTheme,
+				id:         "hidetheme",
+				textId:     "hide_theme",
+				process:    hideTheme,
 				isActiveFn: isThemeRevealed,
-				rowId:1,
+				rowId:      1,
 			},
 		},
 	})
@@ -71,8 +71,8 @@ func (factory *themeDialogFactory) createVariants(trans i18n.TranslateFunc, isRe
 	for _, variant := range factory.variants {
 		if variant.isActiveFn == nil || variant.isActiveFn(isRevealed) {
 			variants = append(variants, dialog.Variant{
-				Id:   variant.id,
-				Text: trans(variant.textId),
+				Id:    variant.id,
+				Text:  trans(variant.textId),
 				RowId: variant.rowId,
 			})
 		}
@@ -92,7 +92,7 @@ func (factory *themeDialogFactory) MakeDialog(userId int64, trans i18n.Translate
 
 	var title string
 	if isRevealed {
-		title = trans("theme_title", map[string]interface{} {
+		title = trans("theme_title", map[string]interface{}{
 			"Theme": theme,
 		})
 	} else {

@@ -7,8 +7,8 @@ import (
 )
 
 func GetTextInputProcessorManager() dialogManager.TextInputProcessorManager {
-	return dialogManager.TextInputProcessorManager {
-		Processors : dialogManager.TextProcessorsMap {
+	return dialogManager.TextInputProcessorManager{
+		Processors: dialogManager.TextProcessorsMap{
 			//"connectSession" : processConnectSession,
 		},
 	}

@@ -58,7 +58,7 @@ func FindTransFunction(userId int64, staticData *processing.StaticProccessStruct
 	if foundTrans, ok := staticData.Trans[getClosestLang(&config, lang)]; ok {
 		GetDb(staticData).SetUserLanguage(userId, lang)
 		return foundTrans
-	}	
+	}
 
 	// unknown language, use default instead
 	if foundTrans, ok := staticData.Trans[config.DefaultLanguage]; ok {
