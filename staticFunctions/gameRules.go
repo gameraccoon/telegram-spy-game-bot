@@ -106,26 +106,46 @@ func SendSpyfallLocationToAll(staticData *processing.StaticProccessStructs, sess
 	return true
 }
 
+func getRuneIdx(text []rune, what string) int {
+	whatRunes := []rune(what)
+
+	for i := range text {
+		found := true
+		for j := range whatRunes {
+			if text[i+j] != whatRunes[j] {
+				found = false
+				break
+			}
+		}
+		if found {
+			return i
+		}
+	}
+	return -1
+}
+
 func wrapIntoTelegramSpoiler(text string, trans i18n.TranslateFunc) string {
 	// since Telegram spoiler tag shows length, add spaces at the end of each line to obfuscate it
 	var finalText string
 	const maxLineLength = 40
 	for {
-		separatorPos := strings.Index(text, "\n")
-		if separatorPos == -1 {
+		strSeparatorPos := strings.IndexRune(text, '\n')
+		// this is a quick and ugly fix for the extended unicode mixed into the string
+		runeSeparatorPos := getRuneIdx([]rune(text), "\n")
+		if runeSeparatorPos == -1 {
 			finalText += text + "\n"
 			break
 		}
 
 		// skip long lines
-		if separatorPos > maxLineLength {
-			finalText += text[separatorPos+1:]
-			text = text[separatorPos+1:]
+		if runeSeparatorPos > maxLineLength {
+			finalText += text[:strSeparatorPos] + "\n"
+			text = text[strSeparatorPos:]
 			continue
 		}
 
-		finalText += text[:separatorPos] + strings.Repeat(" ", maxLineLength-len(text[:separatorPos])) + "\n"
-		text = text[separatorPos+1:]
+		finalText += text[:strSeparatorPos] + strings.Repeat(" ", maxLineLength-runeSeparatorPos) + "\n"
+		text = text[strSeparatorPos+1:]
 	}
 	// add an extra static line, since spaces from the last line are cut off
 	return "<tg-spoiler>" + finalText + "<i>" + trans("spoiler_terminator") + "</i>" + "</tg-spoiler>"
