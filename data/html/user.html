@@ -17,6 +17,11 @@
         font-size: 12px;
         color: gray;
     }
+    td {
+        padding: 8px 2px;
+        text-align: left;
+        vertical-align: top;
+    }
 </style>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 <script>
@@ -105,6 +110,18 @@ function changeMessageVisibility(isVisible) {
         $('#show-button').show();
     }
     $('#new-tag').hide();
+}
+
+function changeSpyfallLocationsVisibility(isVisible) {
+    if (isVisible) {
+        $('#spyfall-locations').show();
+        $('#spyfall-locations-show-button').hide();
+        $('#spyfall-locations-hide-button').show();
+    } else {
+        $('#spyfall-locations').hide();
+        $('#spyfall-locations-show-button').show();
+        $('#spyfall-locations-hide-button').hide();
+    }
 }
 
 $(document).ready(function() {
@@ -227,6 +244,14 @@ $(document).ready(function() {
     $('#show-button').click(function() {
         changeMessageVisibility(true);
     });
+
+    $('#spyfall-locations-show-button').click(function() {
+        changeSpyfallLocationsVisibility(true);
+    });
+
+    $('#spyfall-locations-hide-button').click(function() {
+        changeSpyfallLocationsVisibility(false);
+    });
 });
 </script>
 </head>
@@ -251,6 +276,21 @@ $(document).ready(function() {
         <button id="add-command-hide-button">Cancel</button></p>
     </div>
     <p><button id="send-spyfall-button">Send Spyfall location</button> <button id="send-numbers-button" title="Send random numbers">#</button><br/></p>
+    <p><button id="spyfall-locations-show-button">Show list of Spyfall locations</button><button id="spyfall-locations-hide-button" style="display: none;">Hide list of Spyfall locations</button></p>
+    <div id="spyfall-locations" style="display: none;">
+        <p>Locations:</p>
+        <table>
+            <tr><td>Airplane</td><td>Bank</td><td>Beach</td></tr>
+            <tr><td>Casino</td><td>Cathedral</td><td>Circus</td></tr>
+            <tr><td>Corporate Party</td><td>Crusader Army</td><td>Day Spa</td></tr>
+            <tr><td>Embassy</td><td>Hospital</td><td>Hotel</td></tr>
+            <tr><td>Military Base</td><td>Movie Studio</td><td>Ocean Liner</td></tr>
+            <tr><td>Passenger Train</td><td>Pirate Ship</td><td>Polar Station</td></tr>
+            <tr><td>Police Station</td><td>Restaurant</td><td>School</td></tr>
+            <tr><td>Service Station</td><td>Space Station</td><td>Submarine</td></tr>
+            <tr><td>Supermarket</td><td>Theater</td><td>University</td></tr>
+        </table>
+    </div>
     <p><button id="leave-game-button">Disconnect</button></p>
     <div id="leave-confirmation" style="display: none;">
         <p>Are you sure you want to leave the game?</p>
