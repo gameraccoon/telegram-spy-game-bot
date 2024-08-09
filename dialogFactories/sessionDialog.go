@@ -53,6 +53,13 @@ func shareLink(sessionId int64, data *processing.ProcessData) bool {
 	db := staticFunctions.GetDb(data.Static)
 	staticData := data.Static
 
+	currentSessionId, isInSession := db.GetUserSession(data.UserId)
+
+	if !isInSession || sessionId != currentSessionId {
+		data.SendMessage(data.Trans("session_is_too_old"), true)
+		return true
+	}
+
 	sessionToken, isFound := db.GetTokenFromSessionId(sessionId)
 
 	if !isFound {
@@ -124,6 +131,14 @@ func (factory *sessionDialogFactory) createVariants(trans i18n.TranslateFunc, se
 }
 
 func sendSpyfallLocation(sessionId int64, data *processing.ProcessData) bool {
+	db := staticFunctions.GetDb(data.Static)
+	currentSessionId, isInSession := db.GetUserSession(data.UserId)
+
+	if !isInSession || sessionId != currentSessionId {
+		data.SendMessage(data.Trans("no_session_error"), true)
+		return true
+	}
+
 	isSuccess := staticFunctions.SendSpyfallLocationToAll(data.Static, sessionId)
 	if !isSuccess {
 		trans := staticFunctions.FindTransFunction(data.UserId, data.Static)
@@ -135,7 +150,13 @@ func sendSpyfallLocation(sessionId int64, data *processing.ProcessData) bool {
 func (factory *sessionDialogFactory) MakeDialog(userId int64, trans i18n.TranslateFunc, staticData *processing.StaticProccessStructs, customData interface{}) *dialog.Dialog {
 	db := staticFunctions.GetDb(staticData)
 
-	sessionId, _ := db.GetUserSession(userId)
+	sessionId, isInSession := db.GetUserSession(userId)
+
+	if !isInSession {
+		log.Printf("User %d is not in session", userId)
+		return nil
+	}
+
 	countInSession := db.GetUsersCountInSession(sessionId, false)
 
 	translationMap := map[string]interface{}{
