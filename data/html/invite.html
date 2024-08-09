@@ -34,6 +34,9 @@ button {
     border-radius: 5px;
     cursor: pointer;
 }
+.error {
+    color: #C40;
+}
 </style>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 <script>
@@ -46,7 +49,7 @@ function showError(message, jqXHR, textStatus) {
             errorMessage = "Code " + jqXHR.status;
         }
     }
-    $('#status').html('<p style="color: red;">' + message + '<br/>Error: ' + errorMessage + '</p>');
+    $('#status').html('<p class="error">' + message + '<br/>Error: ' + errorMessage + '</p>');
 }
 
 $(document).ready(function() {
