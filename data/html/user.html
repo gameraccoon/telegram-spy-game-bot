@@ -8,20 +8,64 @@
 <meta http-equiv="Expires" content="0" />
 <title>Spy Game Bot</title>
 <style>
-    body {
-        font-family: Arial, sans-serif;
-        text-align: center;
-        margin: 20px;
-    }
-    span {
-        font-size: 12px;
-        color: gray;
-    }
-    td {
-        padding: 8px 2px;
-        text-align: left;
-        vertical-align: top;
-    }
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin: 20px;
+    background-color: #333;
+    color: #ddd;
+}
+a {
+    display: inline-block;
+    padding: 5px 10px;
+    background-color: #0088cc;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+}
+a:hover {
+    background-color: #005580;
+}
+button {
+    padding: 5px 10px;
+    background-color: #0088cc;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+span {
+    font-size: 12px;
+    color: gray;
+}
+td {
+    padding: 8px 2px;
+    text-align: left;
+    vertical-align: top;
+}
+table {
+    margin-left: auto;
+    margin-right: auto;
+}
+textarea {
+    max-width: -moz-available;
+    background-color: #222;
+    color: #ddd;
+    border: 1px solid #444;
+}
+.messages {
+    background-color: #222;
+    padding: 1px;
+}
+.success {
+    color: #8C0;
+}
+.error {
+    color: #C40;
+}
+.new {
+    color: lawngreen;
+}
 </style>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 <script>
@@ -49,7 +93,7 @@ function showError(message, jqXHR, textStatus) {
             errorMessage = "Code " + jqXHR.status;
         }
     }
-    $('#status').html('<p style="color: red;">' + message + '<br/>Error: ' + errorMessage + '</p>');
+    $('#status').html('<p class="error">' + message + '<br/>Error: ' + errorMessage + '</p>');
 }
 
 function requestUpdateContent() {
@@ -62,20 +106,20 @@ function requestUpdateContent() {
             var numMessages = response.messages.length;
 
             if (response.lastMessageIdx - lastMessageIdx > numMessages) {
-                $('#messages').append('<p style="color: gray;">' + (response.lastMessageIdx - lastMessageIdx - numMessages) + ' old messages were not received</p>');
+                $('#old-messages').append('<p style="color: gray;">' + (response.lastMessageIdx - lastMessageIdx - numMessages) + ' old messages were not received</p>');
             }
 
             var newMessagesCount = response.lastMessageIdx - lastMessageIdx;
 
             if (newMessagesCount > 0) {
                 if (lastCommandText !== "") {
-                    $('#messages').append('<p>' + lastCommandText + '</p>');
+                    $('#old-messages').append('<p>' + lastCommandText + '</p>');
                 }
                 lastCommandText = response.messages[numMessages - 1];
                 $('#last-command-text').html('<p>' + lastCommandText + '</p>');
                 var newMessages = response.messages.slice(-newMessagesCount, -1);
                 newMessages.forEach(function(message) {
-                    $('#messages').append('<p>' + message + '</p>');
+                    $('#old-messages').append('<p>' + message + '</p>');
                 });
 
                 $('#last-command').show();
@@ -86,7 +130,7 @@ function requestUpdateContent() {
             lastMessageIdx = response.lastMessageIdx;
 
             if (newMessagesCount > 0) {
-                $('#messages').scrollTop($('#messages')[0].scrollHeight);
+                $('#old-messages').scrollTop($('#old-messages')[0].scrollHeight);
             }
 
             if (lastMessageIdx > 0) {
@@ -147,7 +191,7 @@ $(document).ready(function() {
         var message = $('#message').val();
 
         if (message === '') {
-            $('#status').html('<p style="color: red;">Message can not be empty</p>');
+            $('#status').html('<p class="error">Message can not be empty</p>');
             return;
         }
 
@@ -162,7 +206,7 @@ $(document).ready(function() {
             $('#add-command').hide();
             $('#add-command-show-button').show();
 
-            $('#status').html('<p style="color: green;">The theme sent successfully<br/>' + (playersCount - 2) + ' player(s) will receive the theme and one player will receive "You are the spy")</p>');
+            $('#status').html('<p class="success">The theme sent successfully<br/>' + (playersCount - 2) + ' player(s) will receive the theme and one player will receive "You are the spy")</p>');
 
             requestUpdateContent();
         }).fail(function(jqXHR, textStatus, errorThrown){
@@ -178,7 +222,7 @@ $(document).ready(function() {
             ContentType: 'application/x-www-form-urlencoded',
             data: { 'playerToken': playerToken }
         }).done(function(response){
-            $('#status').html('<p style="color: green;">The location was sent successfully.<br/>'+(playersCount - 1)+' players will receive the location and one player will receive "You are the spy"</p>');
+            $('#status').html('<p class="success">The location was sent successfully.<br/>'+(playersCount - 1)+' players will receive the location and one player will receive "You are the spy"</p>');
             requestUpdateContent();
         }).fail(function(jqXHR, textStatus, errorThrown){
             showError("Failed to send a location", jqXHR, textStatus);
@@ -230,7 +274,7 @@ $(document).ready(function() {
             ContentType: 'application/x-www-form-urlencoded',
             data: { 'playerToken': playerToken }
         }).done(function(response){
-            $('#status').html('<p style="color: green;">New player numbers sent successfully</p>');
+            $('#status').html('<p class="success">New player numbers sent successfully</p>');
             requestUpdateContent();
         }).fail(function(jqXHR, textStatus, errorThrown){
             showError("Failed to send new numbers", jqXHR, textStatus);
@@ -262,16 +306,17 @@ $(document).ready(function() {
 </div>
 <div id="prev-commands" style="display: none;">
     <p>Previous messages:</p>
-    <div id="messages" style="height: 200px; border: 1px solid black; overflow-y: scroll;"></div>
+    <div id="old-messages" class="messages" style="width: 100%;height: 200px;overflow-y: scroll"></div>
 </div>
 <div id="last-command" style="display: none">
-    <p>Last message:<span id="new-tag" style="color: red; display: none"> (New)</span> <button id="hide-button" style="display: none">Hide</button><button id="show-button">Show</button></p><p id="last-command-text" style="display: none; border: 1px solid black;"></p>
+    <p>Last message:<span id="new-tag" class="new" style="display: none"> (New)</span> <button id="hide-button" style="display: none">Hide</button><button id="show-button">Show</button></p><p id="last-command-text"  class="messages" style="display: none"></p>
 </div>
 <span id="players_count"></span>
 <div>
     <p><button id="add-command-show-button">Send custom theme</button></p>
     <div id="add-command" style="display: none; text-align: -moz-center;">
-        <p><textarea id="message" placeholder="Enter secret message" autocomplete="off" rows="4" cols="50" style="max-width: -moz-available;"></textarea></p>
+        <p>Enter the theme:</p>
+        <p><textarea id="message" placeholder="New theme" autocomplete="off" rows="4" cols="50"></textarea></p>
         <p><button id="send-theme-button">Send to others</button>
         <button id="add-command-hide-button">Cancel</button></p>
     </div>
