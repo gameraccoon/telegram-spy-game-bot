@@ -13,29 +13,37 @@ body {
     text-align: center;
     margin: 20px;
     background-color: #333;
-    color: #ddd;
-}
-a {
-    display: inline-block;
-    padding: 10px 20px;
-    background-color: #0088cc;
-    color: white;
-    text-decoration: none;
-    border-radius: 5px;
-}
-a:hover {
-    background-color: #005580;
+    color: #fff;
 }
 button {
-    padding: 10px 20px;
-    background-color: #0088cc;
+    padding: 5px 10px;
+    background-color: #007AB8;
     color: white;
     border: none;
     border-radius: 5px;
     cursor: pointer;
 }
+input {
+    max-width: -moz-available;
+    background-color: #222;
+    color: #ddd;
+    border: 1px solid #444;
+    border-radius: 3px;
+    padding: 5px;
+}
+select {
+    max-width: -moz-available;
+    background-color: #222;
+    color: #ddd;
+    border: 1px solid #444;
+    border-radius: 3px;
+    padding: 5px;
+}
+.info {
+    color: #6c94bc;
+}
 .error {
-    color: #C40;
+    color: #C1292E;
 }
 </style>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
@@ -65,9 +73,9 @@ $(document).ready(function() {
     });
 
     $('#join').click(function() {
-        $('#status').html('<p>Joining... please wait</p>');
+        $('#status').html('<p class="info">Joining... please wait</p>');
         $.post('/join', { gameId: gameId }, function(data) {
-            $('#status').html('<p>Redirecting to the game... please wait</p>');
+            $('#status').html('<p class="info">Redirecting to the game... please wait</p>');
             window.location.href = '/user/' + data;
         }).fail(function(jqXHR, textStatus, errorThrown){
             showError("Failed to join the game", jqXHR, textStatus);

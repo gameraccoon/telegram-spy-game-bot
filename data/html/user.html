@@ -13,26 +13,18 @@ body {
     text-align: center;
     margin: 20px;
     background-color: #333;
-    color: #ddd;
-}
-a {
-    display: inline-block;
-    padding: 5px 10px;
-    background-color: #0088cc;
-    color: white;
-    text-decoration: none;
-    border-radius: 5px;
-}
-a:hover {
-    background-color: #005580;
+    color: #fff;
 }
 button {
     padding: 5px 10px;
-    background-color: #0088cc;
+    background-color: #007AB8;
     color: white;
     border: none;
     border-radius: 5px;
     cursor: pointer;
+
+    position: relative;
+    display: inline-block;
 }
 span {
     font-size: 12px;
@@ -40,12 +32,14 @@ span {
 }
 td {
     padding: 8px 2px;
-    text-align: left;
-    vertical-align: top;
+    text-align: center;
+    vertical-align: center;
+    border: 1px solid #373737;
 }
 table {
     margin-left: auto;
     margin-right: auto;
+    border-spacing: 0;
 }
 textarea {
     max-width: -moz-available;
@@ -58,15 +52,23 @@ textarea {
 .messages {
     background-color: #222;
     padding: 1px;
+    border-radius: 5px;
 }
-.success {
-    color: #8C0;
+.info {
+    color: #6c94bc;
 }
 .error {
-    color: #C40;
+    color: #C1292E;
 }
 .new {
-    color: lawngreen;
+    font-size: 10px;
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    padding: 4px 8px;
+    border-radius: 50%;
+    background-color: #d35c42;
+    color: white;
 }
 </style>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
@@ -75,6 +77,7 @@ var playerToken = "";
 var playersCount = 2;
 var lastMessageIdx = -1;
 var lastCommandText = "";
+var unreadCount = 0;
 
 function addToTextareaAtCursorPos(textarea, text) {
     var cursorPos = textarea.prop('selectionStart');
@@ -96,6 +99,16 @@ function showError(message, jqXHR, textStatus) {
         }
     }
     $('#status').html('<p class="error">' + message + '<br/>Error: ' + errorMessage + '</p>');
+}
+
+function showUnreadTag(count) {
+    $('#new-tag').show();
+    $('#new-tag').html(unreadCount);
+    if (unreadCount > 9) {
+        $('#new-tag').css('padding', '3px 4px');
+    } else {
+        $('#new-tag').css('padding', '3px 7px');
+    }
 }
 
 function requestUpdateContent() {
@@ -126,7 +139,8 @@ function requestUpdateContent() {
 
                 $('#last-command').show();
                 changeMessageVisibility(false);
-                $('#new-tag').show();
+                unreadCount += newMessages.length + 1;
+                showUnreadTag(unreadCount);
             }
 
             lastMessageIdx = response.lastMessageIdx;
@@ -197,7 +211,7 @@ $(document).ready(function() {
             return;
         }
 
-        $('#status').html('<p>Sending theme... please wait</p>');
+        $('#status').html('<p class="info">Sending theme... please wait</p>');
         $.ajax({
             url: '/send',
             type: 'POST',
@@ -208,7 +222,7 @@ $(document).ready(function() {
             $('#add-command').hide();
             $('#add-command-show-button').show();
 
-            $('#status').html('<p class="success">The theme sent successfully<br/>' + (playersCount - 2) + ' player(s) will receive the theme and one player will receive "You are the spy")</p>');
+            $('#status').html('<p class="info">The theme sent successfully<br/>' + (playersCount - 2) + ' player(s) will receive the theme and one player will receive "You are the spy")</p>');
 
             requestUpdateContent();
         }).fail(function(jqXHR, textStatus, errorThrown){
@@ -217,14 +231,14 @@ $(document).ready(function() {
     });
 
     $('#send-spyfall-button').click(function() {
-        $('#status').html('<p>Sending new location... please wait</p>');
+        $('#status').html('<p class="info">Sending new location... please wait</p>');
         $.ajax({
             url: '/spyfall',
             type: 'POST',
             ContentType: 'application/x-www-form-urlencoded',
             data: { 'playerToken': playerToken }
         }).done(function(response){
-            $('#status').html('<p class="success">The location was sent successfully.<br/>'+(playersCount - 1)+' players will receive the location and one player will receive "You are the spy"</p>');
+            $('#status').html('<p class="info">The location was sent successfully.<br/>'+(playersCount - 1)+' players will receive the location and one player will receive "You are the spy"</p>');
             requestUpdateContent();
         }).fail(function(jqXHR, textStatus, errorThrown){
             showError("Failed to send a location", jqXHR, textStatus);
@@ -237,14 +251,14 @@ $(document).ready(function() {
     });
 
     $('#leave-yes-button').click(function() {
-        $('#status').html('<p>Leaving... please wait</p>');
+        $('#status').html('<p class="info">Leaving... please wait</p>');
         $.ajax({
             url: '/leave',
             type: 'POST',
             ContentType: 'application/x-www-form-urlencoded',
             data: { 'playerToken': playerToken }
         }).done(function(response){
-        $('#status').html('<p>Redirecting...</p>');
+        $('#status').html('<p class="info">Redirecting...</p>');
             window.location.href = '/';
         }).fail(function(jqXHR, textStatus, errorThrown){
             showError("Failed to leave the game", jqXHR, textStatus);
@@ -269,14 +283,14 @@ $(document).ready(function() {
     });
 
     $('#send-numbers-button').click(function() {
-        $('#status').html('<p>Sending new numbers... please wait</p>');
+        $('#status').html('<p class="info">Sending new numbers... please wait</p>');
         $.ajax({
             url: '/numbers',
             type: 'POST',
             ContentType: 'application/x-www-form-urlencoded',
             data: { 'playerToken': playerToken }
         }).done(function(response){
-            $('#status').html('<p class="success">New player numbers sent successfully</p>');
+            $('#status').html('<p class="info">New player numbers sent successfully</p>');
             requestUpdateContent();
         }).fail(function(jqXHR, textStatus, errorThrown){
             showError("Failed to send new numbers", jqXHR, textStatus);
@@ -289,6 +303,7 @@ $(document).ready(function() {
 
     $('#show-button').click(function() {
         changeMessageVisibility(true);
+        unreadCount = 0;
     });
 
     $('#spyfall-locations-show-button').click(function() {
@@ -311,7 +326,7 @@ $(document).ready(function() {
     <div id="old-messages" class="messages" style="width: 100%;height: 200px;overflow-y: scroll"></div>
 </div>
 <div id="last-command" style="display: none">
-    <p>Last message:<span id="new-tag" class="new" style="display: none"> (New)</span> <button id="hide-button" style="display: none">Hide</button><button id="show-button">Show</button></p><p id="last-command-text"  class="messages" style="display: none"></p>
+    <p>Last message:<button id="hide-button" style="display: none">Hide</button><button id="show-button">Show<span id="new-tag" class="new" style="display: none"></span></button></p><p id="last-command-text"  class="messages" style="display: none"></p>
 </div>
 <span id="players_count"></span>
 <div>
