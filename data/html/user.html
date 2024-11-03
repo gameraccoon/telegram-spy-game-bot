@@ -78,6 +78,7 @@ var playersCount = 2;
 var lastMessageIdx = -1;
 var lastCommandText = "";
 var unreadCount = 0;
+var gameType = "all";
 
 function addToTextareaAtCursorPos(textarea, text) {
     var cursorPos = textarea.prop('selectionStart');
@@ -184,8 +185,29 @@ function changeSpyfallLocationsVisibility(isVisible) {
     }
 }
 
+function updateGameType(type) {
+    if (type === "all" || type === "spyfall") {
+        $('#send-spyfall-button').show();
+        $('#spyfall-locations-show-button').show();
+    }
+
+    if (type === "all" || type === "fake-artist") {
+        $('#add-command-show-button').show();
+    }
+
+    if (type === "spyfall") {
+        $('#add-command-show-button').hide();
+    } else if (type === "fake-artist") {
+        $('#send-spyfall-button').hide();
+        $('#spyfall-locations-show-button').hide();
+    }
+}
+
 $(document).ready(function() {
     playerToken = window.location.pathname.split('/').pop();
+    gameType = window.location.pathname.split('/')[2];
+
+    updateGameType(gameType);
 
     requestUpdateContent();
     setInterval(requestUpdateContent, 5000);
@@ -330,14 +352,14 @@ $(document).ready(function() {
 </div>
 <span id="players_count"></span>
 <div>
-    <p><button id="add-command-show-button">Send custom theme</button></p>
+    <p><button id="add-command-show-button">Send secret theme</button></p>
     <div id="add-command" style="display: none; text-align: -moz-center;">
         <p>Enter the theme:</p>
         <p><textarea id="message" placeholder="New theme" autocomplete="off" rows="4" cols="50"></textarea></p>
         <p><button id="send-theme-button">Send to others</button>
         <button id="add-command-hide-button">Cancel</button></p>
     </div>
-    <p><button id="send-spyfall-button">Send Spyfall location</button> <button id="send-numbers-button" title="Send random numbers">#</button><br/></p>
+    <p><button id="send-spyfall-button">Send Spyfall location</button></p>
     <p><button id="spyfall-locations-show-button">Show list of Spyfall locations</button><button id="spyfall-locations-hide-button" style="display: none;">Hide list of Spyfall locations</button></p>
     <div id="spyfall-locations" style="display: none;">
         <p>Locations:</p>
@@ -353,6 +375,7 @@ $(document).ready(function() {
             <tr><td>Supermarket</td><td>Theater</td><td>University</td></tr>
         </table>
     </div>
+    <p><button id="send-numbers-button" title="Send random numbers to players">Enumerate players</button><br/></p>
     <p><button id="leave-game-button">Disconnect</button></p>
     <div id="leave-confirmation" style="display: none;">
         <p>Are you sure you want to leave the game?</p>

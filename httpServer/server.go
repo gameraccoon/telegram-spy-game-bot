@@ -129,11 +129,19 @@ func gamePage(w http.ResponseWriter, r *http.Request, db *database.SpyBotDb, cac
 	}
 
 	// get player token from URL
-	playerTokenStr := r.URL.Path[len("/user/"):]
-	if playerTokenStr == "" {
+	urlPayload := r.URL.Path[len("/user/"):]
+	if urlPayload == "" {
 		http.Error(w, "Incorrect URL", http.StatusBadRequest)
 		return
 	}
+
+	playerTokenStrSplit := strings.Split(urlPayload, "/")
+	if len(playerTokenStrSplit) != 2 {
+		http.Error(w, "Incorrect URL format", http.StatusBadRequest)
+		return
+	}
+
+	playerTokenStr := playerTokenStrSplit[1]
 
 	playerToken, err := strconv.ParseInt(playerTokenStr, 10, 64)
 	if err != nil {
