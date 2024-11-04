@@ -64,11 +64,19 @@ func homePage(w http.ResponseWriter, r *http.Request, caches *webCaches) {
 }
 
 func invitePage(w http.ResponseWriter, r *http.Request, db *database.SpyBotDb, caches *webCaches) {
-	gameToken := r.URL.Path[len("/invite/"):]
-	if gameToken == "" {
+	urlPayload := r.URL.Path[len("/invite/"):]
+	if urlPayload == "" {
 		http.Error(w, "Incorrect URL", http.StatusBadRequest)
 		return
 	}
+
+	urlPayloadSplit := strings.Split(urlPayload, "/")
+	if len(urlPayloadSplit) != 2 {
+		http.Error(w, "Incorrect URL format", http.StatusBadRequest)
+		return
+	}
+
+	gameToken := urlPayloadSplit[1]
 
 	_, isFound := db.GetSessionIdFromToken(gameToken)
 	if isFound {
@@ -135,13 +143,13 @@ func gamePage(w http.ResponseWriter, r *http.Request, db *database.SpyBotDb, cac
 		return
 	}
 
-	playerTokenStrSplit := strings.Split(urlPayload, "/")
-	if len(playerTokenStrSplit) != 2 {
+	urlPayloadSplit := strings.Split(urlPayload, "/")
+	if len(urlPayloadSplit) != 2 {
 		http.Error(w, "Incorrect URL format", http.StatusBadRequest)
 		return
 	}
 
-	playerTokenStr := playerTokenStrSplit[1]
+	playerTokenStr := urlPayloadSplit[1]
 
 	playerToken, err := strconv.ParseInt(playerTokenStr, 10, 64)
 	if err != nil {

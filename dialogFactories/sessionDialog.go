@@ -28,15 +28,15 @@ func MakeSessionDialogFactory() dialogFactory.DialogFactory {
 	return &(sessionDialogFactory{
 		variants: []sessionVariantPrototype{
 			sessionVariantPrototype{
-				id:      "share",
-				textId:  "share_link",
-				process: shareLink,
+				id:      "shareartist",
+				textId:  "share_artist_link",
+				process: shareArtistLink,
 				rowId:   1,
 			},
 			sessionVariantPrototype{
-				id:      "discsess",
-				textId:  "disconnect_session",
-				process: disconnectSession,
+				id:      "sharespyfall",
+				textId:  "share_spyfall_link",
+				process: shareSpyfallLink,
 				rowId:   1,
 			},
 			sessionVariantPrototype{
@@ -45,50 +45,22 @@ func MakeSessionDialogFactory() dialogFactory.DialogFactory {
 				process: sendSpyfallLocation,
 				rowId:   2,
 			},
+			sessionVariantPrototype{
+				id:      "discsess",
+				textId:  "disconnect_session",
+				process: disconnectSession,
+				rowId:   2,
+			},
 		},
 	})
 }
 
-func shareLink(sessionId int64, data *processing.ProcessData) bool {
-	db := staticFunctions.GetDb(data.Static)
-	staticData := data.Static
+func shareArtistLink(sessionId int64, data *processing.ProcessData) bool {
+	return shareLink(sessionId, "fake-artist", data)
+}
 
-	currentSessionId, isInSession := db.GetUserSession(data.UserId)
-
-	if !isInSession || sessionId != currentSessionId {
-		data.SendMessage(data.Trans("session_is_too_old"), true)
-		return true
-	}
-
-	sessionToken, isFound := db.GetTokenFromSessionId(sessionId)
-
-	if !isFound {
-		log.Printf("Can't find session token for sessionId %d", sessionId)
-	}
-
-	config, configCastSuccess := staticData.Config.(static.StaticConfiguration)
-
-	if !configCastSuccess {
-		config = static.StaticConfiguration{}
-	}
-
-	data.SendMessage("Share this link with your friends to invite them to the game:", true)
-
-	data.SendMessage(fmt.Sprintf(
-		"Link to join the game:\n%s/invite/%s",
-		config.ShareWebAddress,
-		sessionToken,
-	),
-		true)
-
-	data.SendMessage(fmt.Sprintf(
-		"Or show them this QR code:\nhttps://api.qrserver.com/v1/create-qr-code/?size=150x150&margin=10&data=%s/invite/%s",
-		config.ShareWebAddress,
-		sessionToken,
-	),
-		false)
-
-	return true
+func shareSpyfallLink(sessionId int64, data *processing.ProcessData) bool {
+	return shareLink(sessionId, "spyfall", data)
 }
 
 func disconnectSession(sessionId int64, data *processing.ProcessData) bool {
@@ -189,4 +161,48 @@ func (factory *sessionDialogFactory) ProcessVariant(variantId string, additional
 		}
 	}
 	return false
+}
+
+func shareLink(sessionId int64, gameType string, data *processing.ProcessData) bool {
+	db := staticFunctions.GetDb(data.Static)
+	staticData := data.Static
+
+	currentSessionId, isInSession := db.GetUserSession(data.UserId)
+
+	if !isInSession || sessionId != currentSessionId {
+		data.SendMessage(data.Trans("session_is_too_old"), true)
+		return true
+	}
+
+	sessionToken, isFound := db.GetTokenFromSessionId(sessionId)
+
+	if !isFound {
+		log.Printf("Can't find session token for sessionId %d", sessionId)
+	}
+
+	config, configCastSuccess := staticData.Config.(static.StaticConfiguration)
+
+	if !configCastSuccess {
+		config = static.StaticConfiguration{}
+	}
+
+	data.SendMessage("Share this link with your friends to invite them to the game:", true)
+
+	data.SendMessage(fmt.Sprintf(
+		"Link to join the game:\n%s/invite/%s/%s",
+		config.ShareWebAddress,
+		gameType,
+		sessionToken,
+	),
+		true)
+
+	data.SendMessage(fmt.Sprintf(
+		"Or show them this QR code:\nhttps://api.qrserver.com/v1/create-qr-code/?size=150x150&margin=10&data=%s/invite/%s/%s",
+		config.ShareWebAddress,
+		gameType,
+		sessionToken,
+	),
+		false)
+
+	return true
 }

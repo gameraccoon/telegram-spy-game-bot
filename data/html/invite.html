@@ -60,18 +60,9 @@ function showError(message, jqXHR, textStatus) {
     $('#status').html('<p class="error">' + message + '<br/>Error: ' + errorMessage + '</p>');
 }
 
-function joinGame(gameId, gameType) {
-    $('#status').html('<p class="info">Joining... please wait</p>');
-    $.post('/join', { gameId: gameId }, function(data) {
-        $('#status').html('<p class="info">Redirecting to the game... please wait</p>');
-        window.location.href = '/user/' + gameType + '/' + data;
-    }).fail(function(jqXHR, textStatus, errorThrown){
-        showError("Failed to join the game", jqXHR, textStatus);
-    });
-}
-
 $(document).ready(function() {
     var gameId = window.location.pathname.split('/').pop();
+    var gameType = window.location.pathname.split('/')[2];
 
     $('#show-options').click(function() {
         $('#options').show();
@@ -83,31 +74,22 @@ $(document).ready(function() {
     });
 
     $('#join').click(function() {
-        $('#initial-dialog').hide();
-        $('#join-details').show();
-    });
-
-    $('#join-spyfall').click(function() {
-        joinGame(gameId, 'spyfall');
-    });
-
-    $('#join-fake-artist').click(function() {
-        joinGame(gameId, 'fake-artist');
+        $('#status').html('<p class="info">Joining... please wait</p>');
+        $.post('/join', { gameId: gameId }, function(data) {
+            $('#status').html('<p class="info">Redirecting to the game... please wait</p>');
+            window.location.href = '/user/' + gameType + '/' + data;
+        }).fail(function(jqXHR, textStatus, errorThrown){
+            showError("Failed to join the game", jqXHR, textStatus);
+        });
     });
 });
 </script>
 </head>
 <body>
-<div id="initial-dialog">
 <p>You are joining by invite link</p>
 <button id="open-in-telegram">Continue in Telegram</button>
 <p>or</p>
 <button id="join">Join from web</button>
-</div>
-<div id="join-details" style="display: none;">
-    <p>Choose the game you are playing</p>
-    <p><button id="join-spyfall">Spyfall</button></p>
-    <p><button id="join-fake-artist">A Fake Artist Goes to New York</button></p>
-</div>
+<div id="status"></div>
 </body>
 </html>
