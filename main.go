@@ -99,6 +99,7 @@ func main() {
 	dialogManager.RegisterDialogFactory("lc", dialogFactories.MakeLanguageSelectDialogFactory())
 	dialogManager.RegisterDialogFactory("se", dialogFactories.MakeSessionDialogFactory())
 	dialogManager.RegisterDialogFactory("ns", dialogFactories.MakeNoSessionDialogFactory())
+	dialogManager.RegisterDialogFactory("in", dialogFactories.MakeInviteDialogFactory())
 	dialogManager.RegisterTextInputProcessorManager(dialogFactories.GetTextInputProcessorManager())
 
 	staticData := &processing.StaticProccessStructs{
