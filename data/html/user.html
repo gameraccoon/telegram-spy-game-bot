@@ -203,9 +203,18 @@ function updateGameType(type) {
     }
 }
 
+function setCookie(cname, cvalue, exdays) {
+    const d = new Date();
+    d.setTime(d.getTime() + (exdays*24*60*60*1000));
+    let expires = "expires="+ d.toUTCString();
+    document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+}
+
 $(document).ready(function() {
     playerToken = window.location.pathname.split('/').pop();
     gameType = window.location.pathname.split('/')[2];
+
+    setCookie("last_session", playerToken, 7);
 
     updateGameType(gameType);
 
@@ -273,6 +282,7 @@ $(document).ready(function() {
     });
 
     $('#leave-yes-button').click(function() {
+        setCookie("last_session", "", 0);
         $('#status').html('<p class="info">Leaving... please wait</p>');
         $.ajax({
             url: '/leave',
