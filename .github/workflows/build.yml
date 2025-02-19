@@ -34,7 +34,7 @@ jobs:
         cp -r telegram-spy-game-bot data artifacts
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: telegram-spy-game-bot_ubuntu-x64
         path: artifacts/*
