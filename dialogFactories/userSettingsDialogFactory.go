@@ -40,7 +40,7 @@ func MakeUserSettingsDialogFactory() dialogFactory.DialogFactory {
 }
 
 func changeLanguage(userId int64, data *processing.ProcessData) bool {
-	data.SubstitudeDialog(data.Static.MakeDialogFn("lc", data.UserId, data.Trans, data.Static, nil))
+	data.SubstituteDialog(data.Static.MakeDialogFn("lc", data.UserId, data.Trans, data.Static, nil))
 	return true
 }
 

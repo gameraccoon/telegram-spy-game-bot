@@ -62,7 +62,7 @@ func disconnectSession(sessionId int64, data *processing.ProcessData) bool {
 	}
 
 	_, wasInSession := db.LeaveSession(data.UserId)
-	data.SubstitudeDialog(data.Static.MakeDialogFn("ns", data.UserId, data.Trans, data.Static, nil))
+	data.SubstituteDialog(data.Static.MakeDialogFn("ns", data.UserId, data.Trans, data.Static, nil))
 	if wasInSession {
 		staticFunctions.UpdateSessionDialogs(sessionId, data.Static)
 	}

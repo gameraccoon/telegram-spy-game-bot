@@ -1,8 +1,9 @@
 module github.com/gameraccoon/telegram-spy-game-bot
 
 go 1.22.2
+
 require (
-	github.com/gameraccoon/telegram-bot-skeleton v0.0.6
+	github.com/gameraccoon/telegram-bot-skeleton v0.0.8
 	github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible
 	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/nicksnyder/go-i18n v1.10.3

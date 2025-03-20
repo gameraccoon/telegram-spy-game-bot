@@ -2,8 +2,8 @@ github.com/BurntSushi/toml v1.4.0 h1:kuoIxZQy2WRRk1pttg9asf+WVv6tWQuBNVmK8+nqPr0
 github.com/BurntSushi/toml v1.4.0/go.mod h1:ukJfTF/6rtPPRCnwkur4qwRxa8vTRFBF0uk2lLoLwho=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/gameraccoon/telegram-bot-skeleton v0.0.6 h1:p9DQZZJYMRcAncooUIHR3zlR7qzgGdDjSTmWMBPU8X8=
-github.com/gameraccoon/telegram-bot-skeleton v0.0.6/go.mod h1:Pq/K4fprrC6dHZo8n0wJN48x4cl7ypRUgETPkTk5LVE=
+github.com/gameraccoon/telegram-bot-skeleton v0.0.8 h1:IFeTyAQzCxtxtTLvhdrq981oQhi/nZdopWLWsvbD9ZA=
+github.com/gameraccoon/telegram-bot-skeleton v0.0.8/go.mod h1:Pq/K4fprrC6dHZo8n0wJN48x4cl7ypRUgETPkTk5LVE=
 github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible h1:2cauKuaELYAEARXRkq2LrJ0yDDv1rW7+wrTEdVL3uaU=
 github.com/go-telegram-bot-api/telegram-bot-api v4.6.4+incompatible/go.mod h1:qf9acutJ8cwBUhm1bqgz6Bei9/C/c93FPDljKWwsOgM=
 github.com/mattn/go-sqlite3 v1.14.22 h1:2gZY6PC6kBnID23Tichd1K+Z0oS6nE/XwU+Vz/5o4kU=

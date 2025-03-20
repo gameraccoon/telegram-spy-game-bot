@@ -25,7 +25,7 @@ func MakeLanguageSelectDialogFactory() dialogFactory.DialogFactory {
 func applyNewLanguage(data *processing.ProcessData, newLang string) bool {
 	staticFunctions.GetDb(data.Static).SetUserLanguage(data.UserId, newLang)
 	data.Trans = staticFunctions.FindTransFunction(data.UserId, data.Static)
-	data.SubstitudeMessage(data.Trans("language_changed"))
+	data.SubstituteMessage(data.Trans("language_changed"))
 	return true
 }
 
