@@ -2,6 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"log"
+	"os"
+	"strings"
+
 	"github.com/gameraccoon/telegram-bot-skeleton/dialog"
 	"github.com/gameraccoon/telegram-bot-skeleton/dialogManager"
 	"github.com/gameraccoon/telegram-bot-skeleton/processing"
@@ -11,11 +15,6 @@ import (
 	"github.com/gameraccoon/telegram-spy-game-bot/httpServer"
 	static "github.com/gameraccoon/telegram-spy-game-bot/staticData"
 	"github.com/nicksnyder/go-i18n/i18n"
-	"io/ioutil"
-	"log"
-	"math/rand"
-	"strings"
-	"time"
 )
 
 func init() {
@@ -23,7 +22,7 @@ func init() {
 }
 
 func getFileStringContent(filePath string) (content string, err error) {
-	fileContent, err := ioutil.ReadFile(filePath)
+	fileContent, err := os.ReadFile(filePath)
 	if err == nil {
 		content = strings.TrimSpace(string(fileContent))
 	}
@@ -44,8 +43,6 @@ func loadConfig(path string) (config static.StaticConfiguration, err error) {
 }
 
 func main() {
-	rand.Seed(time.Now().UnixNano())
-
 	apiToken, err := getApiToken()
 	if err != nil {
 		log.Fatal(err.Error())
@@ -63,7 +60,7 @@ func main() {
 
 		trans, err1 := i18n.Tfunc(lang.Key)
 		if err1 != nil {
-			log.Fatal(err.Error())
+			log.Fatal(err1.Error())
 		}
 		translators[lang.Key] = trans
 	}
