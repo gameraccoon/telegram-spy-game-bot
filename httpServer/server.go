@@ -217,24 +217,24 @@ func getLastMessages(w http.ResponseWriter, r *http.Request, db *database.SpyBot
 	messages, newLastIdx := db.GetNewRecentWebMessages(userId, lastMessageIdx)
 
 	w.Header().Set("Content-Type", "application/json")
-	messagesStr := ""
+	var messagesStr strings.Builder
 	for i, message := range messages {
 		if i > 0 {
-			messagesStr += ","
+			messagesStr.WriteString(",")
 		}
 
-		sanitizedString := strings.Replace(message, "\n", "<br/>", -1)
-		sanitizedString = strings.Replace(sanitizedString, "\"", "\\\"", -1)
+		sanitizedString := strings.ReplaceAll(message, "\n", "<br/>", )
+		sanitizedString = strings.ReplaceAll(sanitizedString, "\"", "\\\"", )
 
-		messagesStr += "\"" + sanitizedString + "\""
+		messagesStr.WriteString("\"" + sanitizedString + "\"")
 	}
 
 	playersCount := db.GetUsersCountInSession(sessionId, false)
 
-	_, err = w.Write([]byte("{\"lastMessageIdx\":" + strconv.Itoa(newLastIdx) + ",\"players\":" + strconv.FormatInt(playersCount, 10) + ",\"messages\":[" + messagesStr + "]}"))
+	_, err = w.Write([]byte("{\"lastMessageIdx\":" + strconv.Itoa(newLastIdx) + ",\"players\":" + strconv.FormatInt(playersCount, 10) + ",\"messages\":[" + messagesStr.String() + "]}"))
 }
 
-func sendHiddenMessage(w http.ResponseWriter, r *http.Request, db *database.SpyBotDb, staticData *processing.StaticProccessStructs) {
+func sendHiddenMessageToOthers(w http.ResponseWriter, r *http.Request, db *database.SpyBotDb, staticData *processing.StaticProccessStructs) {
 	if r.Method != "POST" {
 		http.Error(w, "Invalid request method", http.StatusMethodNotAllowed)
 		return
@@ -276,13 +276,12 @@ func sendHiddenMessage(w http.ResponseWriter, r *http.Request, db *database.SpyB
 		return
 	}
 
-	isSucceeded := staticFunctions.SendThemeToOthers(staticData, sessionId, userId, message)
+	err = staticFunctions.SendThemeToOthers(staticData, sessionId, userId, message)
 
-	if !isSucceeded {
-		_, err = w.Write([]byte("Not enough players"))
-		if err != nil {
-			return
-		}
+	if err != nil {
+		trans := staticFunctions.FindTransFunction(userId, staticData)
+		http.Error(w, trans(err.Error()), http.StatusExpectationFailed)
+		return
 	}
 
 	_, err = w.Write([]byte("ok"))
@@ -327,16 +326,18 @@ func sendSpyfallLocation(w http.ResponseWriter, r *http.Request, db *database.Sp
 		return
 	}
 
-	isSucceeded := staticFunctions.SendSpyfallLocationToAll(staticData, sessionId)
+	err = staticFunctions.SendStaticThemeToAll(staticData, sessionId)
 
-	if !isSucceeded {
-		_, err = w.Write([]byte("Not enough players"))
-		if err != nil {
-			return
-		}
+	if err != nil {
+		trans := staticFunctions.FindTransFunction(userId, staticData)
+		http.Error(w, trans(err.Error()), http.StatusExpectationFailed)
+		return
 	}
 
 	_, err = w.Write([]byte("ok"))
+	if err != nil {
+		return
+	}
 }
 
 func leaveGame(w http.ResponseWriter, r *http.Request, db *database.SpyBotDb, staticData *processing.StaticProccessStructs) {
@@ -450,7 +451,7 @@ func HandleHttpRequests(port int, staticData *processing.StaticProccessStructs) 
 		getLastMessages(w, r, db)
 	})
 	http.HandleFunc("/send", func(w http.ResponseWriter, r *http.Request) {
-		sendHiddenMessage(w, r, db, staticData)
+		sendHiddenMessageToOthers(w, r, db, staticData)
 	})
 	http.HandleFunc("/spyfall", func(w http.ResponseWriter, r *http.Request) {
 		sendSpyfallLocation(w, r, db, staticData)

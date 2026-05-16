@@ -35,6 +35,7 @@ func ConnectDb(path string) (database *SpyBotDb, err error) {
 	database.db.Exec("CREATE TABLE IF NOT EXISTS" +
 		" sessions(id INTEGER NOT NULL PRIMARY KEY" +
 		",token TEXT NOT NULL" +
+		",game_name TEXT" +
 		")")
 
 	database.db.Exec("CREATE TABLE IF NOT EXISTS" +
@@ -175,7 +176,7 @@ func (database *SpyBotDb) GetOrCreateTelegramUserId(chatId int64, userLangCode s
 		log.Fatal(err.Error())
 	}
 
-	database.db.Exec(fmt.Sprintf("INSERT INTO users DEFAULT VALUES"))
+	database.db.Exec("INSERT INTO users DEFAULT VALUES")
 
 	userId = database.getLastInsertedItemId()
 
@@ -332,15 +333,17 @@ func (database *SpyBotDb) DoesSessionExist(sessionId int64) (isExists bool) {
 	return
 }
 
-func (database *SpyBotDb) CreateSession(userId int64) (sessionId int64, previousSessionId int64, wasInSession bool) {
+func (database *SpyBotDb) CreateSession(userId int64, gameName string) (sessionId int64, previousSessionId int64, wasInSession bool) {
 	previousSessionId, wasInSession = database.LeaveSession(userId)
 
 	database.mutex.Lock()
 	defer database.mutex.Unlock()
 
-	database.db.Exec("INSERT INTO sessions (token) VALUES (strftime('%s', 'now') || '-' || abs(random() % 100000))")
+	database.db.Exec("INSERT INTO sessions (token, game_name) VALUES (strftime('%s', 'now') || '-' || abs(random() % 100000), '')")
 
 	sessionId = database.getLastInsertedItemId()
+
+	database.db.Exec(fmt.Sprintf("UPDATE OR ROLLBACK sessions SET game_name='%s' WHERE id=%d", dbBase.SanitizeString(gameName), sessionId))
 
 	database.db.Exec(fmt.Sprintf("UPDATE OR ROLLBACK users SET current_session=%d WHERE id=%d", sessionId, userId))
 
@@ -713,4 +716,30 @@ func (database *SpyBotDb) GetNewRecentWebMessages(userId int64, lastIndex int) (
 	}
 
 	return
+}
+
+func (database *SpyBotDb) GetGameName(sessionId int64) string {
+	database.mutex.Lock()
+	defer database.mutex.Unlock()
+
+	var name string
+	rows, err := database.db.Query(fmt.Sprintf("SELECT game_name FROM sessions WHERE id=%d", sessionId))
+	if err != nil {
+		return ""
+	}
+	defer func() {
+		err := rows.Close()
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+	}()
+
+	if rows.Next() {
+		err := rows.Scan(&name)
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+	}
+
+	return name
 }

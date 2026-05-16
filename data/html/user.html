@@ -74,7 +74,7 @@ textarea {
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
 <script>
 var playerToken = "";
-var playersCount = 2;
+var playersCount = 1;
 var lastMessageIdx = -1;
 var lastCommandText = "";
 var unreadCount = 0;
@@ -191,13 +191,13 @@ function updateGameType(type) {
         $('#spyfall-locations-show-button').show();
     }
 
-    if (type === "all" || type === "fake-artist") {
+    if (type === "all" || type === "fake_artist" || type === "insider") {
         $('#add-command-show-button').show();
     }
 
     if (type === "spyfall") {
         $('#add-command-show-button').hide();
-    } else if (type === "fake-artist") {
+    } else if (type === "fake_artist" || type === "insider") {
         $('#send-spyfall-button').hide();
         $('#spyfall-locations-show-button').hide();
     }
@@ -242,6 +242,11 @@ $(document).ready(function() {
             return;
         }
 
+        if (playersCount < 3) {
+            $('#status').html('<p class="error">Not enough players to send the theme</p>');
+            return;
+        }
+
         $('#status').html('<p class="info">Sending theme... please wait</p>');
         $.ajax({
             url: '/send',
@@ -253,7 +258,11 @@ $(document).ready(function() {
             $('#add-command').hide();
             $('#add-command-show-button').show();
 
-            $('#status').html('<p class="info">The theme sent successfully<br/>' + (playersCount - 2) + ' player(s) will receive the theme and one player will receive "You are the spy")</p>');
+            if (gameType === "fake_artist") {
+                $('#status').html('<p class="info">The theme sent successfully<br/>' + (playersCount - 2) + ' player(s) will receive the theme and one player will receive "You are the fake artist")</p>');
+            } else {
+                $('#status').html('<p class="info">The theme sent successfully<br/>One player will receive the theme and ' + (playersCount - 2) + ' players will receive "Find the insider" message)</p>');
+            }
 
             requestUpdateContent();
         }).fail(function(jqXHR, textStatus, errorThrown){

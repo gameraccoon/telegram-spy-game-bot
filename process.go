@@ -41,21 +41,25 @@ func settingsCommand(data *processing.ProcessData) {
 	data.SendDialog(data.Static.MakeDialogFn("us", data.UserId, data.Trans, data.Static, nil))
 }
 
-func sendSpyfallLocation(data *processing.ProcessData) {
+func sendStaticTheme(data *processing.ProcessData) {
 	sessionId, isInSession := staticFunctions.GetDb(data.Static).GetUserSession(data.UserId)
 	if isInSession {
-		isSuccess := staticFunctions.SendSpyfallLocationToAll(data.Static, sessionId)
-		if !isSuccess {
+		err := staticFunctions.SendStaticThemeToAll(data.Static, sessionId)
+		if err != nil {
 			trans := staticFunctions.FindTransFunction(data.UserId, data.Static)
-			data.SendMessage(trans("few_players"), true)
+			data.SendMessage(trans(err.Error()), true)
 		}
 	} else {
 		data.SendMessage(data.Trans("no_session_error"), true)
 	}
 }
 
-func listOfSpyfallLocations(data *processing.ProcessData) {
-	staticFunctions.SendSpyfallLocationsList(data)
+func listOfThemes(data *processing.ProcessData) {
+	err := staticFunctions.SendStaticThemeList(data)
+	if err != nil {
+		trans := staticFunctions.FindTransFunction(data.UserId, data.Static)
+		data.SendMessage(trans(err.Error()), true)
+	}
 }
 
 func sendNumbersToPlayers(data *processing.ProcessData) {
@@ -78,14 +82,14 @@ func cancelCommand(data *processing.ProcessData) {
 
 func makeUserCommandProcessors() ProcessorFuncMap {
 	return map[string]ProcessorFunc{
-		"start":        startCommand,
-		"session":      sessionCommand,
-		"settings":     settingsCommand,
-		"spyfall_send": sendSpyfallLocation,
-		"spyfall_list": listOfSpyfallLocations,
-		"help":         helpCommand,
-		"cancel":       cancelCommand,
-		"number":       sendNumbersToPlayers,
+		"start":      startCommand,
+		"session":    sessionCommand,
+		"settings":   settingsCommand,
+		"theme_send": sendStaticTheme,
+		"theme_list": listOfThemes,
+		"help":       helpCommand,
+		"cancel":     cancelCommand,
+		"number":     sendNumbersToPlayers,
 	}
 }
 
@@ -144,12 +148,12 @@ func processPlainMessage(data *processing.ProcessData, dialogManager *dialogMana
 	if !success {
 		sessionId, isInSession := staticFunctions.GetDb(data.Static).GetUserSession(data.UserId)
 		if isInSession {
-			isSuccess := staticFunctions.SendThemeToOthers(data.Static, sessionId, data.UserId, data.Message)
+			err := staticFunctions.SendThemeToOthers(data.Static, sessionId, data.UserId, data.Message)
 			trans := staticFunctions.FindTransFunction(data.UserId, data.Static)
-			if isSuccess {
-				data.SendMessage(trans("theme_sent"), true)
+			if err != nil {
+				data.SendMessage(trans(err.Error()), true)
 			} else {
-				data.SendMessage(trans("few_players"), true)
+				data.SendMessage(trans("theme_sent"), true)
 			}
 		} else {
 			data.SendMessage(data.Trans("help_info"), true)

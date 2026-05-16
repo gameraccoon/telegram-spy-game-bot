@@ -30,10 +30,22 @@ func MakeNoSessionDialogFactory() dialogFactory.DialogFactory {
 				rowId:2,
 			},*/
 			noSessionVariantPrototype{
-				id:      "createsess",
-				textId:  "create_session",
-				process: createNewSession,
+				id:      "createspy",
+				textId:  "create_spyfall",
+				process: createSpyfallSession,
 				rowId:   2,
+			},
+			noSessionVariantPrototype{
+				id:      "createart",
+				textId:  "create_artist",
+				process: createArtistSession,
+				rowId:   3,
+			},
+			noSessionVariantPrototype{
+				id:      "createins",
+				textId:  "create_insider",
+				process: createInsiderSession,
+				rowId:   4,
 			},
 		},
 	})
@@ -47,8 +59,23 @@ func connectToSession(data *processing.ProcessData) bool {
 	return true
 }
 
-func createNewSession(data *processing.ProcessData) bool {
-	_, previousSessionId, wasInSession := staticFunctions.GetDb(data.Static).CreateSession(data.UserId)
+func createSpyfallSession(data *processing.ProcessData) bool {
+	createNewSession(data, "spyfall")
+	return true
+}
+
+func createArtistSession(data *processing.ProcessData) bool {
+	createNewSession(data, "fake_artist")
+	return true
+}
+
+func createInsiderSession(data *processing.ProcessData) bool {
+	createNewSession(data, "insider")
+	return true
+}
+
+func createNewSession(data *processing.ProcessData, gameName string) bool {
+	_, previousSessionId, wasInSession := staticFunctions.GetDb(data.Static).CreateSession(data.UserId, gameName)
 	staticFunctions.SendSessionDialog(data)
 	if wasInSession {
 		staticFunctions.UpdateSessionDialogs(previousSessionId, data.Static)

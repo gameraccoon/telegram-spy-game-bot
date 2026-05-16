@@ -7,7 +7,7 @@ import (
 
 const (
 	minimalVersion = "0.1"
-	latestVersion  = "0.2"
+	latestVersion  = "0.3"
 )
 
 type dbUpdater struct {
@@ -109,6 +109,12 @@ func makeAllUpdaters() []dbUpdater {
 					")")
 				db.db.Exec("INSERT INTO users (id, current_session) SELECT id, current_session FROM users_old")
 				db.db.Exec("DROP TABLE users_old")
+			},
+		},
+		{
+			version: "0.3",
+			updateDb: func(db *SpyBotDb) {
+				db.db.Exec("ALTER TABLE sessions ADD COLUMN game_name TEXT")
 			},
 		},
 	}

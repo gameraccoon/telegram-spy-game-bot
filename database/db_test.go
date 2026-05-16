@@ -184,7 +184,7 @@ func TestUserSession(t *testing.T) {
 	userId1 := db.GetOrCreateTelegramUserId(123, "")
 	userId2 := db.GetOrCreateTelegramUserId(321, "")
 
-	sessionId, _, _ := db.CreateSession(userId1)
+	sessionId, _, _ := db.CreateSession(userId1, "")
 	assert.True(db.DoesSessionExist(sessionId))
 
 	{
@@ -290,7 +290,7 @@ func TestAddWebUser(t *testing.T) {
 
 	// we can add web users only if we have a session
 	userId := db.GetOrCreateTelegramUserId(123, "")
-	sessionId, _, _ := db.CreateSession(userId)
+	sessionId, _, _ := db.CreateSession(userId, "")
 
 	assert.False(db.DoesWebUserExist(webUserToken))
 
@@ -346,7 +346,7 @@ func TestRemoveWebUser(t *testing.T) {
 	webUserToken := int64(10)
 
 	userId := db.GetOrCreateTelegramUserId(123, "")
-	sessionId, _, _ := db.CreateSession(userId)
+	sessionId, _, _ := db.CreateSession(userId, "")
 
 	db.AddWebUser(sessionId, webUserToken)
 
@@ -370,7 +370,7 @@ func TestWebMessages(t *testing.T) {
 	defer db.Disconnect()
 
 	userId := db.GetOrCreateTelegramUserId(123, "")
-	sessionId, _, _ := db.CreateSession(userId)
+	sessionId, _, _ := db.CreateSession(userId, "")
 
 	webUserToken := int64(42)
 	db.AddWebUser(sessionId, webUserToken)
@@ -449,7 +449,7 @@ func TestWebMessagesClearing(t *testing.T) {
 	userId := db.GetOrCreateTelegramUserId(123, "")
 
 	{
-		sessionId, _, _ := db.CreateSession(userId)
+		sessionId, _, _ := db.CreateSession(userId, "")
 
 		webUserToken := int64(42)
 		db.AddWebUser(sessionId, webUserToken)
@@ -461,7 +461,7 @@ func TestWebMessagesClearing(t *testing.T) {
 	}
 
 	{
-		sessionId, _, _ := db.CreateSession(userId)
+		sessionId, _, _ := db.CreateSession(userId, "")
 
 		webUserToken := int64(63)
 		db.AddWebUser(sessionId, webUserToken)
@@ -471,4 +471,21 @@ func TestWebMessagesClearing(t *testing.T) {
 		assert.Equal(0, len(commands))
 		assert.Equal(-1, newLastIndex)
 	}
+}
+
+func TestGameName(t *testing.T) {
+	assert := require.New(t)
+	db := createDbAndConnect(t)
+	defer clearDb()
+	if db == nil {
+		t.Fail()
+		return
+	}
+	defer db.Disconnect()
+
+	userId := db.GetOrCreateTelegramUserId(123, "")
+	sessionId, _, _ := db.CreateSession(userId, "test game")
+
+	name := db.GetGameName(sessionId)
+	assert.Equal("test game", name)
 }

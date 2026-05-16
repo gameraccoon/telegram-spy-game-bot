@@ -1,44 +1,75 @@
 package staticFunctions
 
 import (
+	"errors"
+	"fmt"
+	"math/rand"
+	"strings"
+
 	"github.com/gameraccoon/telegram-bot-skeleton/processing"
 	static "github.com/gameraccoon/telegram-spy-game-bot/staticData"
 	"github.com/nicksnyder/go-i18n/i18n"
-	"log"
-	"math/rand"
-	"strings"
 )
 
-func SendThemeToPlayers(staticData *processing.StaticProccessStructs, userIds []int64, theme string) (success bool) {
+func normalizeNumberOfReceivers(numberOfReceivers int, userIdsLen int) int {
+	if numberOfReceivers < 0 {
+		numberOfReceivers = userIdsLen + numberOfReceivers
+	}
+	if numberOfReceivers < 0 || numberOfReceivers > userIdsLen {
+		numberOfReceivers = 0
+	}
+	return numberOfReceivers
+}
+
+func SendThemeToPlayers(staticData *processing.StaticProccessStructs, sessionId int64, userIds []int64, theme string) (err error) {
 	db := GetDb(staticData)
 
 	if len(userIds) < 2 {
-		return false
+		return errors.New("few_players")
 	}
 
-	spyIdx := rand.Intn(len(userIds))
+	config, configCastSuccess := staticData.Config.(static.StaticConfiguration)
+	if !configCastSuccess {
+		return errors.New("Config type is incorrect")
+	}
+
+	gameName := db.GetGameName(sessionId)
+
+	gameRules, ok := config.GameRules[gameName]
+	if !ok {
+		return fmt.Errorf("Game rules for game %s not found", gameName)
+	}
+
+	numberOfReceivers := normalizeNumberOfReceivers(gameRules.NumberOfThemeReceivers, len(userIds))
+	if numberOfReceivers <= 0 {
+		return errors.New("Incorrect number of receivers")
+	}
+
+	rand.Shuffle(len(userIds), func(i, j int) { userIds[i], userIds[j] = userIds[j], userIds[i] })
 
 	for i, userId := range userIds {
 		trans := FindTransFunction(userId, staticData)
 
 		var themeMessage string
-		if i == spyIdx {
-			themeMessage = "<tg-spoiler>" + trans("theme_spy") + "</tg-spoiler>"
-		} else {
+		if i < numberOfReceivers {
 			themeMessage = theme
+		} else if gameRules.SpyTheme != "" {
+			themeMessage = trans(gameRules.SpyTheme)
 		}
 
-		chatId, isFound := db.GetTelegramUserChatId(userId)
-		if isFound {
-			staticData.Chat.SendMessage(chatId, wrapIntoTelegramSpoiler(themeMessage, trans), 0, true)
-		} else {
-			db.AddWebMessage(userId, themeMessage, 10)
+		if themeMessage != "" {
+			chatId, isFound := db.GetTelegramUserChatId(userId)
+			if isFound {
+				staticData.Chat.SendMessage(chatId, wrapIntoTelegramSpoiler(themeMessage, trans), 0, true)
+			} else {
+				db.AddWebMessage(userId, themeMessage, 10)
+			}
 		}
 	}
-	return true
+	return nil
 }
 
-func SendThemeToOthers(staticData *processing.StaticProccessStructs, sessionId int64, excludeUserId int64, theme string) (success bool) {
+func SendThemeToOthers(staticData *processing.StaticProccessStructs, sessionId int64, excludeUserId int64, theme string) (err error) {
 	playersInSession := GetDb(staticData).GetUsersInSession(sessionId)
 	var playersExceptCurrent []int64
 	for _, userId := range playersInSession {
@@ -47,53 +78,72 @@ func SendThemeToOthers(staticData *processing.StaticProccessStructs, sessionId i
 		}
 	}
 
-	return SendThemeToPlayers(staticData, playersExceptCurrent, theme)
+	return SendThemeToPlayers(staticData, sessionId, playersExceptCurrent, theme)
 }
 
-func SendSpyfallLocationToAll(staticData *processing.StaticProccessStructs, sessionId int64) (success bool) {
+func SendStaticThemeToAll(staticData *processing.StaticProccessStructs, sessionId int64) (err error) {
 	db := GetDb(staticData)
 
 	config, configCastSuccess := staticData.Config.(static.StaticConfiguration)
-
 	if !configCastSuccess {
-		log.Print("Config type is incorrect")
-		return false
+		return errors.New("Config type is incorrect")
 	}
 
-	locationsCount := len(config.SpyfallLocations)
+	gameName := db.GetGameName(sessionId)
 
-	if locationsCount == 0 {
-		log.Print("No locations found")
-		return false
+	gameRules, ok := config.GameRules[gameName]
+	if !ok {
+		return fmt.Errorf("Game rules for game %s not found", gameName)
 	}
 
-	locationIdx := rand.Intn(locationsCount)
-	locationInfoCopy := config.SpyfallLocations[locationIdx]
-	rand.Shuffle(len(locationInfoCopy.Roles), func(i, j int) {
-		locationInfoCopy.Roles[i], locationInfoCopy.Roles[j] = locationInfoCopy.Roles[j], locationInfoCopy.Roles[i]
-	})
+	themesCount := len(gameRules.StaticThemes) + len(gameRules.StaticThemesWithRoles)
+
+	if themesCount == 0 {
+		return errors.New("no_static_themes")
+	}
 
 	userIds := db.GetUsersInSession(sessionId)
 
 	if len(userIds) < 2 {
-		return false
+		return errors.New("few_players")
 	}
 
-	spyIdx := rand.Intn(len(userIds))
+	numberOfReceivers := normalizeNumberOfReceivers(gameRules.NumberOfThemeReceivers, len(userIds))
+	if numberOfReceivers <= 0 {
+		return errors.New("Incorrect number of receivers")
+	}
 
-	roleIdx := 0
+	rand.Shuffle(len(userIds), func(i, j int) {
+		userIds[i], userIds[j] = userIds[j], userIds[i]
+	})
+
+	themeIdx := rand.Intn(themesCount)
+
+	themeId := "";
+	var roles *[]string = nil;
+	if themeIdx < len(gameRules.StaticThemes) {
+		themeId = gameRules.StaticThemes[themeIdx]
+	} else {
+		themeId = gameRules.StaticThemesWithRoles[themeIdx - len(gameRules.StaticThemes)].ThemeId
+		roles = &gameRules.StaticThemesWithRoles[themeIdx - len(gameRules.StaticThemes)].Roles
+	}
+
 	for i, userId := range userIds {
 		trans := FindTransFunction(userId, staticData)
 
 		var theme string
-		if i == spyIdx {
-			theme = trans("spyfall_theme_spy")
-		} else if roleIdx < len(locationInfoCopy.Roles)-1 {
-			theme = trans("spyfall_theme", map[string]interface{}{
-				"Location": trans("spyfall_loc_" + locationInfoCopy.LocationId),
-				"Role":     trans("spyfall_role_" + locationInfoCopy.LocationId + "_" + locationInfoCopy.Roles[roleIdx]),
+		if i >= numberOfReceivers {
+			theme = trans(gameRules.SpyTheme)
+		} else if roles != nil && i < len(*roles)-1 {
+			theme = trans(gameRules.ThemeTemplate, map[string]interface{}{
+				"ThemeId": trans(gameRules.ThemePrefix + themeId),
+				"Role":     trans(gameRules.RolePrefix + themeId + "_" + (*roles)[i]),
 			})
-			roleIdx += 1
+		} else {
+			theme = trans(gameRules.ThemeTemplate, map[string]interface{}{
+				"ThemeId": trans(gameRules.ThemePrefix + themeId),
+				"Role":     trans(gameRules.RolePrefix + themeId + "_" + (*roles)[len(*roles)-1]),
+			})
 		}
 
 		chatId, isFound := db.GetTelegramUserChatId(userId)
@@ -103,7 +153,8 @@ func SendSpyfallLocationToAll(staticData *processing.StaticProccessStructs, sess
 			db.AddWebMessage(userId, theme, 10)
 		}
 	}
-	return true
+
+	return nil
 }
 
 func getRuneIdx(text []rune, what string) int {
@@ -126,45 +177,67 @@ func getRuneIdx(text []rune, what string) int {
 
 func wrapIntoTelegramSpoiler(text string, trans i18n.TranslateFunc) string {
 	// since Telegram spoiler tag shows length, add spaces at the end of each line to obfuscate it
-	var finalText string
+	var finalText strings.Builder
 	const maxLineLength = 40
 	for {
 		strSeparatorPos := strings.IndexRune(text, '\n')
 		// this is a quick and ugly fix for the extended unicode mixed into the string
 		runeSeparatorPos := getRuneIdx([]rune(text), "\n")
 		if runeSeparatorPos == -1 {
-			finalText += text + "\n"
+			finalText.WriteString(text + "\n")
 			break
 		}
 
 		// skip long lines
 		if runeSeparatorPos > maxLineLength {
-			finalText += text[:strSeparatorPos] + "\n"
+			finalText.WriteString(text[:strSeparatorPos] + "\n")
 			text = text[strSeparatorPos:]
 			continue
 		}
 
-		finalText += text[:strSeparatorPos] + strings.Repeat(" ", maxLineLength-runeSeparatorPos) + "\n"
+		finalText.WriteString(text[:strSeparatorPos] + strings.Repeat(" ", maxLineLength-runeSeparatorPos) + "\n")
 		text = text[strSeparatorPos+1:]
 	}
 	// add an extra static line, since spaces from the last line are cut off
-	return "<tg-spoiler>" + finalText + "<i>" + trans("spoiler_terminator") + "</i>" + "</tg-spoiler>"
+	return "<tg-spoiler>" + finalText.String() + "<i>" + trans("spoiler_terminator") + "</i>" + "</tg-spoiler>"
 }
 
-func SendSpyfallLocationsList(data *processing.ProcessData) {
+func SendStaticThemeList(data *processing.ProcessData) (err error) {
+	db := GetDb(data.Static)
+
+	sessionId, isInSession := db.GetUserSession(data.UserId)
+	if !isInSession {
+		return errors.New("no_session_title")
+	}
+
 	config, configCastSuccess := data.Static.Config.(static.StaticConfiguration)
 
 	if !configCastSuccess {
-		log.Print("Config type is incorrect")
-		return
+		return errors.New("Config type is incorrect")
+	}
+
+	gameName := db.GetGameName(sessionId)
+
+	gameRules, ok := config.GameRules[gameName]
+	if !ok {
+		return fmt.Errorf("Game rules for game %s not found", gameName)
+	}
+
+	if len(gameRules.StaticThemes) == 0 && len(gameRules.StaticThemesWithRoles) == 0 {
+		return errors.New("no_static_themes")
 	}
 
 	var themesList []string
-	for _, location := range config.SpyfallLocations {
-		themesList = append(themesList, data.Trans("spyfall_loc_"+location.LocationId))
+	for _, themeId := range gameRules.StaticThemes {
+		themesList = append(themesList, data.Trans(gameRules.ThemePrefix + themeId))
+	}
+	for _, theme := range gameRules.StaticThemesWithRoles {
+		themesList = append(themesList, data.Trans(gameRules.ThemePrefix + theme.ThemeId))
 	}
 
 	data.SendMessage(strings.Join(themesList[:], "\n"), true)
+
+	return nil
 }
 
 func GiveRandomNumbersToPlayers(staticData *processing.StaticProccessStructs, sessionId int64) {
@@ -190,5 +263,4 @@ func GiveRandomNumbersToPlayers(staticData *processing.StaticProccessStructs, se
 			db.AddWebMessage(userId, theme, 10)
 		}
 	}
-	return
 }
