@@ -1,16 +1,18 @@
 package httpServer
 
 import (
+	"bytes"
 	"fmt"
-	"github.com/gameraccoon/telegram-bot-skeleton/processing"
-	"github.com/gameraccoon/telegram-spy-game-bot/database"
-	"github.com/gameraccoon/telegram-spy-game-bot/staticFunctions"
 	"log"
 	"math/rand/v2"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/gameraccoon/telegram-bot-skeleton/processing"
+	"github.com/gameraccoon/telegram-spy-game-bot/database"
+	"github.com/gameraccoon/telegram-spy-game-bot/staticFunctions"
 )
 
 type webCaches struct {
@@ -20,12 +22,13 @@ type webCaches struct {
 	userHtml            string
 }
 
-func loadCaches() (caches webCaches, err error) {
+func loadCaches(botName string) (caches webCaches, err error) {
 	pageHtml, err := os.ReadFile("data/html/index.html")
 	if err != nil {
 		log.Fatal("Error while reading index.html: ", err)
 		return
 	}
+	pageHtml = bytes.ReplaceAll(pageHtml, []byte("{{.bot_name}}"), []byte(botName))
 	caches.indexHtml = string(pageHtml)
 
 	pageHtml, err = os.ReadFile("data/html/invite.html")
@@ -33,6 +36,7 @@ func loadCaches() (caches webCaches, err error) {
 		log.Fatal("Error while reading invite.html: ", err)
 		return
 	}
+	pageHtml = bytes.ReplaceAll(pageHtml, []byte("{{.bot_name}}"), []byte(botName))
 	caches.inviteHtml = string(pageHtml)
 
 	pageHtml, err = os.ReadFile("data/html/invite_no_session.html")
@@ -40,6 +44,7 @@ func loadCaches() (caches webCaches, err error) {
 		log.Fatal("Error while reading invite_no_session.html: ", err)
 		return
 	}
+	pageHtml = bytes.ReplaceAll(pageHtml, []byte("{{.bot_name}}"), []byte(botName))
 	caches.inviteNoSessionHtml = string(pageHtml)
 
 	pageHtml, err = os.ReadFile("data/html/user.html")
@@ -430,7 +435,7 @@ func sendNumbers(w http.ResponseWriter, r *http.Request, db *database.SpyBotDb, 
 func HandleHttpRequests(port int, staticData *processing.StaticProccessStructs) {
 	db := staticFunctions.GetDb(staticData)
 
-	caches, err := loadCaches()
+	caches, err := loadCaches(staticData.BotName)
 	if err != nil {
 		return
 	}
