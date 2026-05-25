@@ -122,6 +122,14 @@ func ConnectToSession(data *processing.ProcessData, token string) (successful bo
 		return false
 	}
 
+	currentSessionId, isFound := db.GetUserSession(data.UserId)
+	if isFound {
+		if currentSessionId == sessionId {
+			SendSessionDialog(data)
+			return true
+		}
+	}
+
 	successfullyConnected, previousSessionId, wasInSession := db.ConnectToSession(data.UserId, sessionId)
 	if !successfullyConnected {
 		return false
