@@ -231,7 +231,9 @@ func getLastMessages(w http.ResponseWriter, r *http.Request, db *database.SpyBot
 		sanitizedString := strings.ReplaceAll(message, "\n", "<br/>", )
 		sanitizedString = strings.ReplaceAll(sanitizedString, "\"", "\\\"", )
 
-		messagesStr.WriteString("\"" + sanitizedString + "\"")
+		messagesStr.WriteString("\"");
+		messagesStr.WriteString(sanitizedString);
+		messagesStr.WriteString("\"")
 	}
 
 	playersCount := db.GetUsersCountInSession(sessionId, false)

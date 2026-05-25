@@ -184,18 +184,22 @@ func wrapIntoTelegramSpoiler(text string, trans i18n.TranslateFunc) string {
 		// this is a quick and ugly fix for the extended unicode mixed into the string
 		runeSeparatorPos := getRuneIdx([]rune(text), "\n")
 		if runeSeparatorPos == -1 {
-			finalText.WriteString(text + "\n")
+			finalText.WriteString(text);
+			finalText.WriteString("\n")
 			break
 		}
 
 		// skip long lines
 		if runeSeparatorPos > maxLineLength {
-			finalText.WriteString(text[:strSeparatorPos] + "\n")
+			finalText.WriteString(text[:strSeparatorPos]);
+			finalText.WriteString("\n")
 			text = text[strSeparatorPos:]
 			continue
 		}
 
-		finalText.WriteString(text[:strSeparatorPos] + strings.Repeat(" ", maxLineLength-runeSeparatorPos) + "\n")
+		finalText.WriteString(text[:strSeparatorPos]);
+		finalText.WriteString(strings.Repeat(" ", maxLineLength-runeSeparatorPos));
+		finalText.WriteString("\n")
 		text = text[strSeparatorPos+1:]
 	}
 	// add an extra static line, since spaces from the last line are cut off
